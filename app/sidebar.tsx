@@ -30,12 +30,14 @@ export default function Sidebar() {
 
   return (
     <aside className="flex h-screen w-60 flex-col border-r border-border bg-accent/50">
-      <div className="px-3 py-3 flex items-center gap-2 text-lg">
-        <div className="flex h-5 w-5 items-center justify-center rounded bg-blue-500 text-white  font-semibold">
-          C
+      <Link href={"/"}>
+        <div className="px-3 py-3 flex items-center gap-2 text-lg">
+          <div className="flex h-5 w-5 items-center justify-center rounded bg-blue-500 text-white  font-semibold">
+            C
+          </div>
+          <span className="flex-1 text-left">Cursus</span>
         </div>
-        <span className="flex-1 text-left">Cursus</span>
-      </div>
+      </Link>
 
       <nav className="flex-1 px-2">
         <div className="mt-2 mb-3 text-xs font-medium uppercase tracking-wide text-muted-foreground/70">
@@ -65,7 +67,7 @@ export default function Sidebar() {
         </div>
       </nav>
 
-      <div className="px-2 py-5 space-y-0.5">
+      <div className="px-2 py-3 space-y-0.5">
         <button
           type="button"
           onClick={toggleTheme}
