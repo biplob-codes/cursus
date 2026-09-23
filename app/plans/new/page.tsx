@@ -1,5 +1,5 @@
-const NewPlanPage = () => {
-  return <div>You will create new plans here</div>;
-};
+import { CreatePlanView } from "./create-plan-view";
 
-export default NewPlanPage;
+export default function NewPlanPage() {
+  return <CreatePlanView />;
+}
