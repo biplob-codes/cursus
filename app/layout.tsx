@@ -1,5 +1,4 @@
 import type { Metadata } from "next";
-import { ThemeProvider } from "next-themes";
 import { Geist_Mono, Inter } from "next/font/google";
 import "./globals.css";
 
@@ -20,6 +19,8 @@ export const metadata: Metadata = {
   description: "Your daily practice, tracked.",
 };
 
+const themeScript = `(function(){try{var t=localStorage.getItem("theme");var d=t==="dark"||((t===null||t==="system")&&window.matchMedia("(prefers-color-scheme: dark)").matches);document.documentElement.classList.toggle("dark",d);}catch(e){}})();`;
+
 export default function RootLayout({
   children,
 }: {
@@ -31,6 +32,9 @@ export default function RootLayout({
       className={`${inter.variable} ${geistMono.variable} antialiased h-full`}
       suppressHydrationWarning
     >
+      <head>
+        <script dangerouslySetInnerHTML={{ __html: themeScript }} />
+      </head>
       <body className="min-h-full font-sans bg-background text-foreground">
         {children}
       </body>

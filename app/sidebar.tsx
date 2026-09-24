@@ -3,7 +3,6 @@
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { usePathname } from "next/navigation";
-import { useTheme } from "next-themes";
 import { FilePlus2, Settings, Sun, Moon } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -13,26 +12,29 @@ const navItems = [
 
 export default function Sidebar() {
   const pathname = usePathname();
-  const { resolvedTheme, setTheme } = useTheme();
   const [mounted, setMounted] = useState(false);
+  const [isDark, setIsDark] = useState(false);
 
   useEffect(() => {
     setMounted(true);
+    setIsDark(document.documentElement.classList.contains("dark"));
   }, []);
 
-  const isDark = mounted && resolvedTheme === "dark";
   const ThemeIcon = isDark ? Sun : Moon;
   const themeLabel = isDark ? "Light" : "Dark";
 
   const toggleTheme = () => {
-    setTheme(isDark ? "light" : "dark");
+    const next = !document.documentElement.classList.contains("dark");
+    document.documentElement.classList.toggle("dark", next);
+    localStorage.setItem("theme", next ? "dark" : "light");
+    setIsDark(next);
   };
 
   return (
     <aside className="flex h-screen w-60 flex-col border-r border-border bg-accent/50">
       <Link href={"/"}>
         <div className="px-3 py-3 flex items-center gap-2 text-lg">
-          <div className="flex h-5 w-5 items-center justify-center rounded bg-blue-500 text-white  font-semibold">
+          <div className="flex h-5 w-5 items-center justify-center rounded bg-blue-500 text-white font-semibold">
             C
           </div>
           <span className="flex-1 text-left">Cursus</span>
@@ -52,7 +54,7 @@ export default function Sidebar() {
                 key={item.href}
                 href={item.href}
                 className={cn(
-                  "flex items-center gap-2 rounded-md px-2 py-1.5  transition-colors",
+                  "flex items-center gap-2 rounded-md px-2 py-1.5 transition-colors",
                   "hover:bg-accent hover:text-foreground",
                   isActive
                     ? "bg-accent text-foreground"
@@ -84,7 +86,7 @@ export default function Sidebar() {
         <Link
           href="/settings"
           className={cn(
-            "flex items-center gap-2 rounded-md px-2 py-1.5  transition-colors",
+            "flex items-center gap-2 rounded-md px-2 py-1.5 transition-colors",
             "hover:bg-accent hover:text-foreground",
             pathname === "/settings"
               ? "bg-accent text-foreground"

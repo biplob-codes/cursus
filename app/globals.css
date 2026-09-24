@@ -2,23 +2,23 @@
 @import "tw-animate-css";
 @import "shadcn/tailwind.css";
 
-@custom-variant dark (&:is(.dark *));
+@custom-variant dark (&:where(.dark, .dark *));
 
 :root {
   --background: oklch(0.995 0 0);
   --foreground: oklch(0.22 0 0);
   --card: oklch(1 0 0);
-  --card-foreground: var(--foreground);
+  --card-foreground: oklch(0.22 0 0);
   --popover: oklch(1 0 0);
-  --popover-foreground: var(--foreground);
+  --popover-foreground: oklch(0.22 0 0);
   --primary: oklch(0.22 0 0);
   --primary-foreground: oklch(0.99 0 0);
   --secondary: oklch(0.98 0 0);
-  --secondary-foreground: var(--foreground);
+  --secondary-foreground: oklch(0.22 0 0);
   --muted: oklch(0.975 0 0);
   --muted-foreground: oklch(0.55 0 0);
   --accent: oklch(0.965 0 0);
-  --accent-foreground: var(--foreground);
+  --accent-foreground: oklch(0.22 0 0);
   --border: oklch(0.92 0 0);
   --ring: oklch(0.7 0 0);
 }
@@ -27,24 +27,24 @@
   --background: oklch(0.17 0 0);
   --foreground: oklch(0.96 0 0);
   --card: oklch(0.2 0 0);
-  --card-foreground: var(--foreground);
+  --card-foreground: oklch(0.96 0 0);
   --popover: oklch(0.2 0 0);
-  --popover-foreground: var(--foreground);
+  --popover-foreground: oklch(0.96 0 0);
   --primary: oklch(0.96 0 0);
   --primary-foreground: oklch(0.17 0 0);
   --secondary: oklch(0.24 0 0);
-  --secondary-foreground: var(--foreground);
+  --secondary-foreground: oklch(0.96 0 0);
   --muted: oklch(0.24 0 0);
   --muted-foreground: oklch(0.7 0 0);
   --accent: oklch(0.27 0 0);
-  --accent-foreground: var(--foreground);
-  --border: oklch(1 0 0/0.08);
+  --accent-foreground: oklch(0.96 0 0);
+  --border: oklch(1 0 0 / 0.08);
   --ring: oklch(0.55 0 0);
 }
 
+/* inline is required so utilities use var(--background) directly */
 @theme inline {
   --font-sans: var(--font-sans), ui-sans-serif, system-ui, sans-serif;
-
   --color-background: var(--background);
   --color-foreground: var(--foreground);
   --color-card: var(--card);
