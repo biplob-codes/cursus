@@ -1,8 +1,7 @@
 import type { Metadata } from "next";
-import { Inter, Geist_Mono } from "next/font/google";
 import { ThemeProvider } from "next-themes";
+import { Geist_Mono, Inter } from "next/font/google";
 import "./globals.css";
-import Sidebar from "./sidebar";
 
 const inter = Inter({
   variable: "--font-sans",
@@ -33,12 +32,7 @@ export default function RootLayout({
       suppressHydrationWarning
     >
       <body className="min-h-full font-sans bg-background text-foreground">
-        <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
-          <div className="flex min-h-screen bg-background">
-            <Sidebar />
-            <main className="flex-1 bg-background px-24 py-16">{children}</main>
-          </div>
-        </ThemeProvider>
+        {children}
       </body>
     </html>
   );
