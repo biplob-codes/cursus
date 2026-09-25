@@ -11,7 +11,7 @@
   --card-foreground: oklch(0.22 0 0);
   --popover: oklch(1 0 0);
   --popover-foreground: oklch(0.22 0 0);
-  --primary: oklch(0.22 0 0);
+  --primary: oklch(0.511 0.262 276.966);
   --primary-foreground: oklch(0.99 0 0);
   --secondary: oklch(0.98 0 0);
   --secondary-foreground: oklch(0.22 0 0);
@@ -20,7 +20,7 @@
   --accent: oklch(0.965 0 0);
   --accent-foreground: oklch(0.22 0 0);
   --border: oklch(0.92 0 0);
-  --ring: oklch(0.7 0 0);
+  --ring: oklch(0.511 0.262 276.966);
 }
 
 .dark {
@@ -30,8 +30,8 @@
   --card-foreground: oklch(0.96 0 0);
   --popover: oklch(0.2 0 0);
   --popover-foreground: oklch(0.96 0 0);
-  --primary: oklch(0.96 0 0);
-  --primary-foreground: oklch(0.17 0 0);
+  --primary: oklch(0.585 0.233 277.115);
+  --primary-foreground: oklch(0.99 0 0);
   --secondary: oklch(0.24 0 0);
   --secondary-foreground: oklch(0.96 0 0);
   --muted: oklch(0.24 0 0);
@@ -39,7 +39,7 @@
   --accent: oklch(0.27 0 0);
   --accent-foreground: oklch(0.96 0 0);
   --border: oklch(1 0 0 / 0.08);
-  --ring: oklch(0.55 0 0);
+  --ring: oklch(0.585 0.233 277.115);
 }
 
 /* inline is required so utilities use var(--background) directly */

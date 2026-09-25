@@ -20,7 +20,9 @@ export function PlanListItem({ plan }: { plan: Plan & { tasks: Task[] } }) {
           </span>
         </p>
         {plan.note && (
-          <p className="truncate text-xs text-muted-foreground">{plan.note}</p>
+          <p className="truncate text-xs my-1 text-muted-foreground">
+            {plan.note}
+          </p>
         )}
       </div>
       {total > 0 && (

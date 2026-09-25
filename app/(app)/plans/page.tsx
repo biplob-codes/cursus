@@ -10,12 +10,12 @@ export default async function PlansPage() {
   });
 
   return (
-    <div className="mx-auto w-full max-w-xl space-y-6 px-4 py-12">
+    <div className="mx-auto w-full max-w-2xl space-y-6">
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-semibold tracking-tight text-foreground">
           Plans
         </h1>
-        <Button size="sm">
+        <Button className="">
           <Link href="/plans/new">New plan</Link>
         </Button>
       </div>
