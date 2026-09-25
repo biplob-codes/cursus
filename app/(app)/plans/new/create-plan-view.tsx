@@ -28,6 +28,15 @@ function tryParseDraft(draft: typeof emptyDraft): TaskInput | null {
   return parsed.success ? parsed.data : null;
 }
 
+function taskToDraft(task: TaskInput): typeof emptyDraft {
+  return {
+    title: task.title,
+    description: task.description ?? "",
+    status: task.status,
+    priority: task.priority,
+  };
+}
+
 export function CreatePlanView() {
   const { taskPanelOpen, openTaskPanel, closeTaskPanel } = useAppChrome();
   const [date, setDate] = useState<Date>(() => addDays(new Date(), 1));
@@ -35,7 +44,8 @@ export function CreatePlanView() {
   const [tasks, setTasks] = useState<TaskInput[]>([]);
   const [draft, setDraft] = useState(emptyDraft);
   const [errors, setErrors] = useState<FieldErrors>({});
-  // Bumps when starting a fresh draft so the editor remounts cleanly
+  /** null = composing a new task; number = editing tasks[index] */
+  const [editingIndex, setEditingIndex] = useState<number | null>(null);
   const [editorKey, setEditorKey] = useState(0);
   const [state, formAction, isPending] = useActionState(
     createPlanWithTasks,
@@ -49,20 +59,45 @@ export function CreatePlanView() {
       setTasks([]);
       setDraft(emptyDraft);
       setErrors({});
+      setEditingIndex(null);
       setEditorKey((k) => k + 1);
       closeTaskPanel();
     }
   }, [state, closeTaskPanel]);
 
+  // List rows reflect the draft live while editing an existing task
+  const displayTasks = useMemo(() => {
+    if (!taskPanelOpen || editingIndex === null) return tasks;
+    return tasks.map((task, index) =>
+      index === editingIndex
+        ? {
+            ...task,
+            title: draft.title,
+            description: draft.description || undefined,
+            status: draft.status,
+            priority: draft.priority,
+          }
+        : task,
+    );
+  }, [tasks, draft, taskPanelOpen, editingIndex]);
+
   const tasksForSubmit = useMemo(() => {
     if (!taskPanelOpen) return tasks;
     const parsed = tryParseDraft(draft);
-    return parsed ? [...tasks, parsed] : tasks;
-  }, [tasks, draft, taskPanelOpen]);
+    if (!parsed) return tasks;
+    if (editingIndex !== null) {
+      return tasks.map((t, i) => (i === editingIndex ? parsed : t));
+    }
+    return [...tasks, parsed];
+  }, [tasks, draft, taskPanelOpen, editingIndex]);
 
   function commitDraftIfValid() {
     const parsed = tryParseDraft(draft);
-    if (parsed) {
+    if (!parsed) return;
+
+    if (editingIndex !== null) {
+      setTasks((prev) => prev.map((t, i) => (i === editingIndex ? parsed : t)));
+    } else {
       setTasks((prev) => [...prev, parsed]);
     }
   }
@@ -70,17 +105,45 @@ export function CreatePlanView() {
   function startFreshDraft() {
     setDraft(emptyDraft);
     setErrors({});
+    setEditingIndex(null);
     setEditorKey((k) => k + 1);
   }
 
   function handleOpenPanel() {
     if (taskPanelOpen) {
-      // Already editing → save current (if valid) and start a new task
       commitDraftIfValid();
       startFreshDraft();
       return;
     }
     startFreshDraft();
+    openTaskPanel();
+  }
+
+  function handleSelectTask(index: number) {
+    if (taskPanelOpen) {
+      commitDraftIfValid();
+    }
+    // After commit, index is still correct for the same item
+    const task =
+      editingIndex !== null && tryParseDraft(draft) && index === editingIndex
+        ? tryParseDraft(draft)!
+        : tasks[index];
+    // Prefer latest committed state
+    const source = tasks[index];
+    if (!source && !task) return;
+
+    // Re-read from tasks after a sync commit is async; use draft overlay if same index
+    const next =
+      taskPanelOpen && editingIndex === index
+        ? (tryParseDraft(draft) ?? source)
+        : source;
+
+    if (!next) return;
+
+    setDraft(taskToDraft(next));
+    setErrors({});
+    setEditingIndex(index);
+    setEditorKey((k) => k + 1);
     openTaskPanel();
   }
 
@@ -122,9 +185,14 @@ export function CreatePlanView() {
 
           <div className="space-y-2">
             <h2 className="text-sm font-medium text-foreground">Tasks</h2>
-            <TaskList tasks={tasks} />
+            <TaskList
+              tasks={displayTasks}
+              selectedIndex={taskPanelOpen ? editingIndex : null}
+              onSelect={handleSelectTask}
+            />
             <AddTaskPanel
               isOpen={taskPanelOpen}
+              isEditingExisting={editingIndex !== null}
               draft={taskPanelOpen ? draft : null}
               onOpen={handleOpenPanel}
             />

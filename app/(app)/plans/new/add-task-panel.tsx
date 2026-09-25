@@ -25,16 +25,20 @@ const priorityClass: Record<TaskInput["priority"], string> = {
 
 export function AddTaskPanel({
   isOpen,
+  isEditingExisting,
   draft,
   onOpen,
 }: {
   isOpen: boolean;
+  isEditingExisting: boolean;
   draft: Draft | null;
   onOpen: () => void;
 }) {
+  const showDraftPreview = isOpen && draft && !isEditingExisting;
+
   return (
     <div className="space-y-1">
-      {isOpen && draft && (
+      {showDraftPreview && (
         <div className="flex items-center gap-2 rounded px-2 py-1.5 bg-muted/40">
           <p className="min-w-0 flex-1 truncate font-medium text-foreground">
             {draft.title.trim() || (
