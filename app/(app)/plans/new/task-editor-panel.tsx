@@ -2,14 +2,9 @@
 
 import { X } from "lucide-react";
 import { TaskInput } from "@/schema/task";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/ui/select";
+import { Select, SelectContent, SelectItem, SelectTrigger } from "@/ui/select";
 import { TaskDescriptionEditor } from "./task-description-editor";
+import { cn } from "@/lib/utils";
 
 type Draft = {
   title: string;
@@ -19,6 +14,49 @@ type Draft = {
 };
 
 type FieldErrors = Partial<Record<"title" | "description", string>>;
+
+const statusOptions = [
+  {
+    value: "TODO" as const,
+    label: "To-do",
+    className: "text-muted-foreground",
+  },
+  {
+    value: "IN_PROGRESS" as const,
+    label: "In progress",
+    className: "text-blue-600 dark:text-blue-400",
+  },
+  {
+    value: "DONE" as const,
+    label: "Done",
+    className: "text-green-600 dark:text-green-400",
+  },
+] as const;
+
+const priorityOptions = [
+  {
+    value: "LOW" as const,
+    label: "Low",
+    className: "text-muted-foreground",
+  },
+  {
+    value: "MEDIUM" as const,
+    label: "Medium",
+    className: "text-amber-600 dark:text-amber-400",
+  },
+  {
+    value: "HIGH" as const,
+    label: "High",
+    className: "text-red-600 dark:text-red-400",
+  },
+] as const;
+
+const propertyTriggerClass = cn(
+  "h-auto w-auto gap-1.5 rounded-md border-0 bg-transparent px-2 py-1 text-sm shadow-none",
+  "hover:bg-muted focus:bg-muted focus-visible:ring-0 focus-visible:border-transparent",
+  "data-[popup-open]:bg-muted dark:bg-transparent dark:hover:bg-muted dark:focus:bg-muted",
+  "[&_svg:last-child]:hidden",
+);
 
 export function TaskEditorPanel({
   draft,
@@ -31,6 +69,12 @@ export function TaskEditorPanel({
   onChange: (patch: Partial<Draft>) => void;
   onClose: () => void;
 }) {
+  const activeStatus =
+    statusOptions.find((o) => o.value === draft.status) ?? statusOptions[0];
+  const activePriority =
+    priorityOptions.find((o) => o.value === draft.priority) ??
+    priorityOptions[1];
+
   return (
     <aside className="flex h-full min-h-screen w-1/2 flex-col border-l border-border bg-muted/40">
       <div className="flex items-center justify-end px-6 py-4">
@@ -59,20 +103,29 @@ export function TaskEditorPanel({
           )}
         </div>
 
-        <div className="flex flex-wrap items-center gap-2">
+        <div className="flex flex-wrap items-center gap-1">
           <Select
             value={draft.status}
             onValueChange={(value) =>
               onChange({ status: value as TaskInput["status"] })
             }
           >
-            <SelectTrigger className="h-8 w-auto gap-1.5 border-0 bg-background/60 px-2.5 shadow-none hover:bg-background focus:ring-0">
-              <SelectValue />
+            <SelectTrigger className={propertyTriggerClass}>
+              <span className={cn("text-sm", activeStatus.className)}>
+                {activeStatus.label}
+              </span>
             </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="TODO">To-do</SelectItem>
-              <SelectItem value="IN_PROGRESS">In progress</SelectItem>
-              <SelectItem value="DONE">Done</SelectItem>
+
+            <SelectContent align="start" className="min-w-[180px] p-1">
+              {statusOptions.map((option) => (
+                <SelectItem
+                  key={option.value}
+                  value={option.value}
+                  className={cn("px-2 py-1.5", option.className)}
+                >
+                  {option.label}
+                </SelectItem>
+              ))}
             </SelectContent>
           </Select>
 
@@ -82,13 +135,22 @@ export function TaskEditorPanel({
               onChange({ priority: value as TaskInput["priority"] })
             }
           >
-            <SelectTrigger className="h-8 w-auto gap-1.5 border-0 bg-background/60 px-2.5 shadow-none hover:bg-background focus:ring-0">
-              <SelectValue />
+            <SelectTrigger className={propertyTriggerClass}>
+              <span className={cn("text-sm", activePriority.className)}>
+                {activePriority.label}
+              </span>
             </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="LOW">Low</SelectItem>
-              <SelectItem value="MEDIUM">Medium</SelectItem>
-              <SelectItem value="HIGH">High</SelectItem>
+
+            <SelectContent align="start" className="min-w-[160px] p-1">
+              {priorityOptions.map((option) => (
+                <SelectItem
+                  key={option.value}
+                  value={option.value}
+                  className={cn("px-2 py-1.5", option.className)}
+                >
+                  {option.label}
+                </SelectItem>
+              ))}
             </SelectContent>
           </Select>
         </div>
