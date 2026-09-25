@@ -122,12 +122,7 @@ export function CreatePlanView() {
 
           <div className="space-y-2">
             <h2 className="text-sm font-medium text-foreground">Tasks</h2>
-            <TaskList
-              tasks={tasks}
-              onRemove={(index) =>
-                setTasks((prev) => prev.filter((_, i) => i !== index))
-              }
-            />
+            <TaskList tasks={tasks} />
             <AddTaskPanel
               isOpen={taskPanelOpen}
               draft={taskPanelOpen ? draft : null}

@@ -1,25 +1,12 @@
 "use client";
 
-import { X } from "lucide-react";
 import { Badge } from "@/ui/badge";
 import { TaskInput } from "@/schema/task";
-
-const statusLabel: Record<TaskInput["status"], string> = {
-  TODO: "To-do",
-  IN_PROGRESS: "In progress",
-  DONE: "Done",
-};
 
 const priorityLabel: Record<TaskInput["priority"], string> = {
   LOW: "Low",
   MEDIUM: "Medium",
   HIGH: "High",
-};
-
-const statusClass: Record<TaskInput["status"], string> = {
-  TODO: "bg-muted text-muted-foreground",
-  IN_PROGRESS: "bg-blue-100 text-blue-700 dark:bg-blue-950 dark:text-blue-300",
-  DONE: "bg-green-100 text-green-700 dark:bg-green-950 dark:text-green-300",
 };
 
 const priorityClass: Record<TaskInput["priority"], string> = {
@@ -30,10 +17,9 @@ const priorityClass: Record<TaskInput["priority"], string> = {
 
 export function TaskList({
   tasks,
-  onRemove,
 }: {
   tasks: TaskInput[];
-  onRemove: (index: number) => void;
+  onRemove?: (index: number) => void;
 }) {
   if (tasks.length === 0) return null;
 
@@ -42,33 +28,17 @@ export function TaskList({
       {tasks.map((task, index) => (
         <li
           key={`${task.title}-${index}`}
-          className="flex items-center justify-between gap-3 rounded px-2 py-1.5 hover:bg-muted/60"
+          className="flex items-center gap-2 rounded px-2 py-1.5"
         >
-          <div className="flex min-w-0 flex-1 items-center gap-2">
-            <p className="min-w-0 flex-1 truncate font-medium text-foreground">
-              {task.title}
-            </p>
-            <Badge
-              variant="secondary"
-              className={`shrink-0 text-[11px] ${statusClass[task.status]}`}
-            >
-              {statusLabel[task.status]}
-            </Badge>
-            <Badge
-              variant="secondary"
-              className={`shrink-0 text-[11px] ${priorityClass[task.priority]}`}
-            >
-              {priorityLabel[task.priority]}
-            </Badge>
-          </div>
-          <button
-            type="button"
-            onClick={() => onRemove(index)}
-            className="shrink-0 text-muted-foreground hover:text-foreground"
+          <p className="min-w-0 flex-1 truncate font-medium text-foreground">
+            {task.title}
+          </p>
+          <Badge
+            variant="secondary"
+            className={`shrink-0 text-[11px] ${priorityClass[task.priority]}`}
           >
-            <X className="h-4 w-4" />
-            <span className="sr-only">Remove task</span>
-          </button>
+            {priorityLabel[task.priority]}
+          </Badge>
         </li>
       ))}
     </ul>

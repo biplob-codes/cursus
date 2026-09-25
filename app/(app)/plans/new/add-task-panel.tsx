@@ -11,22 +11,10 @@ type Draft = {
   priority: TaskInput["priority"];
 };
 
-const statusLabel: Record<TaskInput["status"], string> = {
-  TODO: "To-do",
-  IN_PROGRESS: "In progress",
-  DONE: "Done",
-};
-
 const priorityLabel: Record<TaskInput["priority"], string> = {
   LOW: "Low",
   MEDIUM: "Medium",
   HIGH: "High",
-};
-
-const statusClass: Record<TaskInput["status"], string> = {
-  TODO: "bg-muted text-muted-foreground",
-  IN_PROGRESS: "bg-blue-100 text-blue-700 dark:bg-blue-950 dark:text-blue-300",
-  DONE: "bg-green-100 text-green-700 dark:bg-green-950 dark:text-green-300",
 };
 
 const priorityClass: Record<TaskInput["priority"], string> = {
@@ -53,12 +41,6 @@ export function AddTaskPanel({
               <span className="text-muted-foreground">Untitled</span>
             )}
           </p>
-          <Badge
-            variant="secondary"
-            className={`shrink-0 text-[11px] ${statusClass[draft.status]}`}
-          >
-            {statusLabel[draft.status]}
-          </Badge>
           <Badge
             variant="secondary"
             className={`shrink-0 text-[11px] ${priorityClass[draft.priority]}`}
