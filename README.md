@@ -1,36 +1,58 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Cursus
 
-## Getting Started
+A personal productivity tool — built to manage daily routines while juggling
+university and a self-directed learning roadmap. It starts small and grows
+as new problems show up; new features get added when they're actually
+needed, not upfront.
 
-First, run the development server:
+## Current features
+
+- **Daily plans** — create a plan for the day and view it. That's it for now.
+
+More is coming (see Roadmap below).
+
+## Tech stack
+
+- **Framework:** [Next.js 16](https://nextjs.org/) (React 19, TypeScript)
+- **Styling:** [Tailwind CSS v4](https://tailwindcss.com/) + [shadcn/ui](https://ui.shadcn.com/), with `class-variance-authority` for variants and `tw-animate-css` for animation utilities
+- **UI primitives:** [Base UI](https://base-ui.com/)
+- **Auth:** [better-auth](https://www.better-auth.com/) — email + password, plus GitHub as the only social sign-in for now
+- **Database:** PostgreSQL via [Prisma 7](https://www.prisma.io/), using the `@prisma/adapter-pg` driver adapter on top of `pg`
+- **Validation:** [Zod](https://zod.dev/)
+- **Dates:** `date-fns` and `react-day-picker` for the routine/date picking UI
+- **Package manager:** pnpm
+
+## Getting started
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+pnpm install
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Set up your environment variables (database connection, better-auth secret,
+GitHub OAuth client ID/secret for social sign-in), then:
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+```bash
+pnpm db:generate   # generate the Prisma client
+pnpm db:migrate     # run migrations
+pnpm dev
+```
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+Other useful scripts:
 
-## Learn More
+```bash
+pnpm db:studio   # browse the database with Prisma Studio
+pnpm lint        # run eslint
+pnpm build       # production build
+```
 
-To learn more about Next.js, take a look at the following resources:
+## Roadmap
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+No fixed timeline — features get added as they become useful:
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+- Upgrading the daily-plan feature (recurring routines, editing, history)
+- Document/file organization
+- Whatever else turns out to be worth building
 
-## Deploy on Vercel
+## Issues
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+Found a bug or have a feature request? Open an issue in this repo.
