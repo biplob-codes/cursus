@@ -1,12 +1,5 @@
 import { forwardRef, type SVGProps } from "react";
 
-/**
- * GitHub mark, hand-rolled to match lucide-react's icon API
- * (ref-forwarding, size/className/stroke props) since lucide
- * doesn't ship one. Drop this in as e.g. components/icons/github.tsx
- * and import { GithubIcon } wherever you'd otherwise import
- * a lucide icon.
- */
 export interface IconProps extends SVGProps<SVGSVGElement> {
   size?: number | string;
 }
