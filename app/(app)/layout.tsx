@@ -1,12 +1,12 @@
 import { auth } from "@/lib/auth";
-import { redirect } from "next/navigation";
-import Sidebar from "../sidebar";
 import { headers } from "next/headers";
+import Home from "../home";
+import Sidebar from "../sidebar";
 
 const AppLayout = async ({ children }: { children: React.ReactNode }) => {
   const session = await auth.api.getSession({ headers: await headers() });
 
-  if (!session?.user) redirect("/signup");
+  if (!session?.user) return <Home />;
   return (
     <div className="flex min-h-screen bg-background">
       <Sidebar />
