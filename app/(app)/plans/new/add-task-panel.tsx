@@ -52,7 +52,7 @@ export function AddTaskPanel({ onAdd }: { onAdd: (task: TaskInput) => void }) {
       <button
         type="button"
         onClick={() => setIsOpen(true)}
-        className="flex items-center gap-2 rounded px-2 py-1.5 text-sm text-muted-foreground hover:bg-muted hover:text-foreground"
+        className="flex items-center gap-2 rounded px-2 py-1.5 text-sm text-muted-foreground hover:bg-muted hover:text-foreground w-full"
       >
         <Plus className="h-4 w-4" />
         Add task
@@ -61,7 +61,7 @@ export function AddTaskPanel({ onAdd }: { onAdd: (task: TaskInput) => void }) {
   }
 
   return (
-    <div className="space-y-3 rounded-lg bg-muted/40 p-3">
+    <div className="space-y-3  p-3">
       <div className="space-y-1">
         <Input
           autoFocus

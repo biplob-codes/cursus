@@ -18,7 +18,7 @@ export function NoteField({
       <button
         type="button"
         onClick={() => setIsOpen(true)}
-        className="flex items-center gap-2 rounded px-2 py-1.5 text-sm text-muted-foreground hover:bg-muted hover:text-foreground"
+        className="flex items-center gap-2 rounded px-2 py-1.5 text-sm text-muted-foreground hover:bg-muted hover:text-foreground w-full"
       >
         <NotebookPen className="h-4 w-4" />
         Add note
@@ -29,7 +29,10 @@ export function NoteField({
   return (
     <div className="space-y-1.5">
       <div className="flex items-center justify-between">
-        <label htmlFor="note" className="text-sm font-medium text-foreground">
+        <label
+          htmlFor="note"
+          className="text-sm my-2 font-medium text-foreground"
+        >
           Note
         </label>
         <button
@@ -49,7 +52,7 @@ export function NoteField({
       <Textarea
         id="note"
         name="note"
-        rows={3}
+        rows={1}
         value={value}
         onChange={(event) => onChange(event.target.value)}
         placeholder="What's this plan for?"

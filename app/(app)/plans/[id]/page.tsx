@@ -59,7 +59,7 @@ export default async function PlanDetailPage({
   });
 
   return (
-    <div className="mx-auto w-full max-w-xl space-y-6 px-4 py-12">
+    <div className="mx-auto w-full max-w-2xl space-y-6">
       <div>
         <h1 className="text-2xl font-semibold tracking-tight text-foreground">
           Plan for {getRelativeDayLabel(plan.date)}{" "}

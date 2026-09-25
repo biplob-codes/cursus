@@ -14,8 +14,9 @@ export const createPlanWithTasksSchema = z.object({
     .string()
     .trim()
     .max(500, "Keep the note under 500 characters")
+    .nullable()
     .optional()
-    .transform((value) => (value === "" ? undefined : value)),
+    .transform((value) => (value === "" || value === null ? undefined : value)),
   tasks: z.array(taskInputSchema).default([]),
 });
 

@@ -45,11 +45,11 @@ export function TaskList({
           className="flex items-start justify-between gap-3 rounded px-2 py-1.5 hover:bg-muted/60"
         >
           <div className="min-w-0 space-y-1">
-            <p className="truncate text-sm font-medium text-foreground">
+            <p className="truncate  font-medium text-foreground">
               {task.title}
             </p>
             {task.description && (
-              <p className="line-clamp-1 text-xs text-muted-foreground">
+              <p className="line-clamp-1 text-sm text-muted-foreground">
                 {task.description}
               </p>
             )}
