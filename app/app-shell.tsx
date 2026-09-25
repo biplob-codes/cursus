@@ -6,7 +6,7 @@ import { AppChromeProvider, useAppChrome } from "./app-chrome-context";
 import { cn } from "@/lib/utils";
 
 function AppShellInner({ children }: { children: ReactNode }) {
-  const { sidebarHidden } = useAppChrome();
+  const { sidebarHidden, taskPanelOpen } = useAppChrome();
 
   return (
     <div className="flex min-h-screen bg-background">
@@ -14,7 +14,11 @@ function AppShellInner({ children }: { children: ReactNode }) {
       <main
         className={cn(
           "flex-1 bg-background transition-[padding] duration-200",
-          sidebarHidden ? "px-8 py-10" : "px-24 py-16",
+          taskPanelOpen
+            ? "px-0 py-0"
+            : sidebarHidden
+              ? "px-8 py-10"
+              : "px-24 py-16",
         )}
       >
         {children}
