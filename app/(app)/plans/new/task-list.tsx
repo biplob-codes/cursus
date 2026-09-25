@@ -38,40 +38,33 @@ export function TaskList({
   if (tasks.length === 0) return null;
 
   return (
-    <ul className="space-y-0.5">
+    <ul className="space-y-1">
       {tasks.map((task, index) => (
         <li
-          key={index}
-          className="flex items-start justify-between gap-3 rounded px-2 py-1.5 hover:bg-muted/60"
+          key={`${task.title}-${index}`}
+          className="flex items-center justify-between gap-3 rounded px-2 py-1.5 hover:bg-muted/60"
         >
-          <div className="min-w-0 space-y-1">
-            <p className="truncate  font-medium text-foreground">
+          <div className="flex min-w-0 flex-1 items-center gap-2">
+            <p className="min-w-0 flex-1 truncate font-medium text-foreground">
               {task.title}
             </p>
-            {task.description && (
-              <p className="line-clamp-1 text-sm text-muted-foreground">
-                {task.description}
-              </p>
-            )}
-            <div className="flex gap-1.5">
-              <Badge
-                variant="secondary"
-                className={`text-[11px] ${statusClass[task.status]}`}
-              >
-                {statusLabel[task.status]}
-              </Badge>
-              <Badge
-                variant="secondary"
-                className={`text-[11px] ${priorityClass[task.priority]}`}
-              >
-                {priorityLabel[task.priority]}
-              </Badge>
-            </div>
+            <Badge
+              variant="secondary"
+              className={`shrink-0 text-[11px] ${statusClass[task.status]}`}
+            >
+              {statusLabel[task.status]}
+            </Badge>
+            <Badge
+              variant="secondary"
+              className={`shrink-0 text-[11px] ${priorityClass[task.priority]}`}
+            >
+              {priorityLabel[task.priority]}
+            </Badge>
           </div>
           <button
             type="button"
             onClick={() => onRemove(index)}
-            className="mt-1 shrink-0 text-muted-foreground hover:text-foreground"
+            className="shrink-0 text-muted-foreground hover:text-foreground"
           >
             <X className="h-4 w-4" />
             <span className="sr-only">Remove task</span>

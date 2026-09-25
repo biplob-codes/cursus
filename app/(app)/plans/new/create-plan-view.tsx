@@ -35,6 +35,8 @@ export function CreatePlanView() {
   const [tasks, setTasks] = useState<TaskInput[]>([]);
   const [draft, setDraft] = useState(emptyDraft);
   const [errors, setErrors] = useState<FieldErrors>({});
+  // Bumps when starting a fresh draft so the editor remounts cleanly
+  const [editorKey, setEditorKey] = useState(0);
   const [state, formAction, isPending] = useActionState(
     createPlanWithTasks,
     initialActionState,
@@ -47,32 +49,44 @@ export function CreatePlanView() {
       setTasks([]);
       setDraft(emptyDraft);
       setErrors({});
+      setEditorKey((k) => k + 1);
       closeTaskPanel();
     }
   }, [state, closeTaskPanel]);
 
-  // Include an in-progress draft when submitting with the panel still open
   const tasksForSubmit = useMemo(() => {
     if (!taskPanelOpen) return tasks;
     const parsed = tryParseDraft(draft);
     return parsed ? [...tasks, parsed] : tasks;
   }, [tasks, draft, taskPanelOpen]);
 
-  function handleOpenPanel() {
-    if (!taskPanelOpen) {
-      setDraft(emptyDraft);
-      setErrors({});
-    }
-    openTaskPanel();
-  }
-
-  function handleClosePanel() {
+  function commitDraftIfValid() {
     const parsed = tryParseDraft(draft);
     if (parsed) {
       setTasks((prev) => [...prev, parsed]);
     }
+  }
+
+  function startFreshDraft() {
     setDraft(emptyDraft);
     setErrors({});
+    setEditorKey((k) => k + 1);
+  }
+
+  function handleOpenPanel() {
+    if (taskPanelOpen) {
+      // Already editing → save current (if valid) and start a new task
+      commitDraftIfValid();
+      startFreshDraft();
+      return;
+    }
+    startFreshDraft();
+    openTaskPanel();
+  }
+
+  function handleClosePanel() {
+    commitDraftIfValid();
+    startFreshDraft();
     closeTaskPanel();
   }
 
@@ -148,6 +162,7 @@ export function CreatePlanView() {
 
       {taskPanelOpen && (
         <TaskEditorPanel
+          key={editorKey}
           draft={draft}
           errors={errors}
           onChange={(patch) => setDraft((prev) => ({ ...prev, ...patch }))}

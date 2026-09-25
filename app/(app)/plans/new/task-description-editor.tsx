@@ -4,7 +4,7 @@ import { useEditor, EditorContent } from "@tiptap/react";
 import StarterKit from "@tiptap/starter-kit";
 import Placeholder from "@tiptap/extension-placeholder";
 import Link from "@tiptap/extension-link";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import {
   Bold,
   Italic,
@@ -14,6 +14,8 @@ import {
   ListOrdered,
   Link as LinkIcon,
   Code,
+  Check,
+  X,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -38,6 +40,7 @@ function ToolbarButton({
     <button
       type="button"
       title={title}
+      onMouseDown={(e) => e.preventDefault()}
       onClick={onClick}
       className={cn(
         "rounded p-1.5 text-muted-foreground hover:bg-muted hover:text-foreground",
@@ -54,6 +57,9 @@ export function TaskDescriptionEditor({
   onChange,
   placeholder = "Add a description…",
 }: Props) {
+  const [linkOpen, setLinkOpen] = useState(false);
+  const [linkUrl, setLinkUrl] = useState("");
+
   const editor = useEditor({
     extensions: [
       StarterKit.configure({
@@ -62,6 +68,8 @@ export function TaskDescriptionEditor({
       Placeholder.configure({ placeholder }),
       Link.configure({
         openOnClick: false,
+        autolink: true,
+        linkOnPaste: true,
         HTMLAttributes: {
           class: "text-primary underline underline-offset-2 cursor-pointer",
         },
@@ -71,8 +79,12 @@ export function TaskDescriptionEditor({
     immediatelyRender: false,
     editorProps: {
       attributes: {
-        class:
+        class: cn(
           "prose prose-sm dark:prose-invert max-w-none min-h-[200px] focus:outline-none text-foreground",
+          "[&_ul]:list-disc [&_ul]:pl-5 [&_ol]:list-decimal [&_ol]:pl-5",
+          "[&_h2]:text-lg [&_h2]:font-semibold [&_h3]:text-base [&_h3]:font-semibold",
+          "[&_a]:text-primary [&_a]:underline [&_a]:underline-offset-2",
+        ),
       },
     },
     onUpdate: ({ editor: ed }) => {
@@ -81,7 +93,6 @@ export function TaskDescriptionEditor({
     },
   });
 
-  // Keep editor in sync if parent resets the draft
   useEffect(() => {
     if (!editor) return;
     const current = editor.isEmpty ? "" : editor.getHTML();
@@ -92,16 +103,54 @@ export function TaskDescriptionEditor({
 
   if (!editor) return null;
 
-  function setLink() {
+  function openLinkInput() {
+    const prev = editor?.getAttributes("link").href as string | undefined;
+    setLinkUrl(prev ?? "");
+    setLinkOpen(true);
+  }
+
+  function applyLink() {
     if (!editor) return;
-    const prev = editor.getAttributes("link").href as string | undefined;
-    const url = window.prompt("URL", prev ?? "https://");
-    if (url === null) return;
+    const url = linkUrl.trim();
+
     if (url === "") {
       editor.chain().focus().extendMarkRange("link").unsetLink().run();
+      setLinkOpen(false);
+      setLinkUrl("");
       return;
     }
-    editor.chain().focus().extendMarkRange("link").setLink({ href: url }).run();
+
+    const { from, to, empty } = editor.state.selection;
+
+    if (empty) {
+      // No selection → insert the URL as visible linked text
+      editor
+        .chain()
+        .focus()
+        .insertContent({
+          type: "text",
+          text: url,
+          marks: [{ type: "link", attrs: { href: url } }],
+        })
+        .run();
+    } else {
+      // Selection → turn selected text into a link
+      editor
+        .chain()
+        .focus()
+        .setTextSelection({ from, to })
+        .setLink({ href: url })
+        .run();
+    }
+
+    setLinkOpen(false);
+    setLinkUrl("");
+  }
+
+  function cancelLink() {
+    setLinkOpen(false);
+    setLinkUrl("");
+    editor?.chain().focus().run();
   }
 
   return (
@@ -155,8 +204,8 @@ export function TaskDescriptionEditor({
         </ToolbarButton>
         <ToolbarButton
           title="Link"
-          active={editor.isActive("link")}
-          onClick={setLink}
+          active={editor.isActive("link") || linkOpen}
+          onClick={openLinkInput}
         >
           <LinkIcon className="h-4 w-4" />
         </ToolbarButton>
@@ -168,6 +217,45 @@ export function TaskDescriptionEditor({
           <Code className="h-4 w-4" />
         </ToolbarButton>
       </div>
+
+      {linkOpen && (
+        <div className="flex items-center gap-2 rounded-md bg-background/80 px-2 py-1.5">
+          <input
+            autoFocus
+            type="url"
+            value={linkUrl}
+            onChange={(e) => setLinkUrl(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === "Enter") {
+                e.preventDefault();
+                applyLink();
+              }
+              if (e.key === "Escape") {
+                e.preventDefault();
+                cancelLink();
+              }
+            }}
+            placeholder="https://"
+            className="min-w-0 flex-1 bg-transparent text-sm outline-none placeholder:text-muted-foreground/50"
+          />
+          <button
+            type="button"
+            onMouseDown={(e) => e.preventDefault()}
+            onClick={applyLink}
+            className="rounded p-1 text-muted-foreground hover:bg-muted hover:text-foreground"
+          >
+            <Check className="h-4 w-4" />
+          </button>
+          <button
+            type="button"
+            onMouseDown={(e) => e.preventDefault()}
+            onClick={cancelLink}
+            className="rounded p-1 text-muted-foreground hover:bg-muted hover:text-foreground"
+          >
+            <X className="h-4 w-4" />
+          </button>
+        </div>
+      )}
 
       <EditorContent editor={editor} />
     </div>

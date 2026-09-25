@@ -46,39 +46,28 @@ export function AddTaskPanel({
 }) {
   return (
     <div className="space-y-1">
-      {/* Live preview of the draft being edited in the right panel */}
       {isOpen && draft && (
-        <div className="flex items-start justify-between gap-3 rounded px-2 py-1.5 bg-muted/40">
-          <div className="min-w-0 space-y-1">
-            <p className="truncate font-medium text-foreground">
-              {draft.title.trim() || (
-                <span className="text-muted-foreground">Untitled</span>
-              )}
-            </p>
-            {draft.description.trim() ? (
-              <p className="line-clamp-1 text-sm text-muted-foreground">
-                {draft.description}
-              </p>
-            ) : null}
-            <div className="flex gap-1.5">
-              <Badge
-                variant="secondary"
-                className={`text-[11px] ${statusClass[draft.status]}`}
-              >
-                {statusLabel[draft.status]}
-              </Badge>
-              <Badge
-                variant="secondary"
-                className={`text-[11px] ${priorityClass[draft.priority]}`}
-              >
-                {priorityLabel[draft.priority]}
-              </Badge>
-            </div>
-          </div>
+        <div className="flex items-center gap-2 rounded px-2 py-1.5 bg-muted/40">
+          <p className="min-w-0 flex-1 truncate font-medium text-foreground">
+            {draft.title.trim() || (
+              <span className="text-muted-foreground">Untitled</span>
+            )}
+          </p>
+          <Badge
+            variant="secondary"
+            className={`shrink-0 text-[11px] ${statusClass[draft.status]}`}
+          >
+            {statusLabel[draft.status]}
+          </Badge>
+          <Badge
+            variant="secondary"
+            className={`shrink-0 text-[11px] ${priorityClass[draft.priority]}`}
+          >
+            {priorityLabel[draft.priority]}
+          </Badge>
         </div>
       )}
 
-      {/* Always show Add task; when panel is open this is the “another one under” */}
       <button
         type="button"
         onClick={onOpen}
