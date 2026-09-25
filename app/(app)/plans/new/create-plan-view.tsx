@@ -2,8 +2,7 @@
 
 import { useActionState, useEffect, useState } from "react";
 import { addDays } from "date-fns";
-
-import { PlanHeading } from "./plan-heading";
+import { PlanHeader } from "./plan-header";
 import { NoteField } from "./note-field";
 import { AddTaskPanel } from "./add-task-panel";
 import { TaskList } from "./task-list";
@@ -20,10 +19,6 @@ export function CreatePlanView() {
     createPlanWithTasks,
     initialActionState,
   );
-
-  // Only clear the form on success. On error, date/note/tasks are all
-  // ordinary React state here, so they're untouched by default — nothing
-  // to "preserve", there's just nothing that wipes it.
   useEffect(() => {
     if (state.status === "success") {
       setDate(addDays(new Date(), 1));
@@ -33,17 +28,13 @@ export function CreatePlanView() {
   }, [state]);
 
   return (
-    <form
-      action={formAction}
-      className="mx-auto w-full max-w-xl space-y-6 px-4 py-12"
-    >
+    <form action={formAction} className="mx-auto w-full max-w-2xl space-y-6">
       <div className="space-y-1.5">
-        <PlanHeading date={date} onDateChange={setDate} />
+        <PlanHeader date={date} onDateChange={setDate} />
         {state.errors?.date && (
           <p className="text-xs text-destructive">{state.errors.date[0]}</p>
         )}
       </div>
-      {/* The Calendar isn't a text input, so its value is mirrored here. */}
       <input type="hidden" name="date" value={date.toISOString()} />
 
       <div className="space-y-1.5">
