@@ -1,13 +1,14 @@
 "use client";
 
-import Link from "next/link";
-import { useEffect, useState } from "react";
-import { usePathname } from "next/navigation";
-import { FilePlus2, Settings, Sun, Moon } from "lucide-react";
+import { DailyPlansIcon } from "@/icons/daily-plans";
 import { cn } from "@/lib/utils";
+import { Moon, Settings, Sun } from "lucide-react";
+import Link from "next/link";
+import { usePathname } from "next/navigation";
+import { useEffect, useState } from "react";
 
 const navItems = [
-  { label: "Create a plan", href: "/plans/new", icon: FilePlus2 },
+  { label: "Daily plans", href: "/plans", icon: DailyPlansIcon },
 ];
 
 export default function Sidebar() {
@@ -61,7 +62,7 @@ export default function Sidebar() {
                     : "text-muted-foreground",
                 )}
               >
-                <Icon className="h-5 w-5 shrink-0" strokeWidth={1.8} />
+                <Icon />
                 <span>{item.label}</span>
               </Link>
             );
