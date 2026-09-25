@@ -13,6 +13,7 @@ import {
   SelectValue,
 } from "@/ui/select";
 import { TaskInput, taskInputSchema } from "@/schema/task";
+import { useAppChrome } from "@/app/app-chrome-context";
 
 type FieldErrors = Partial<Record<"title" | "description", string>>;
 
@@ -24,6 +25,7 @@ const emptyDraft = {
 };
 
 export function AddTaskPanel({ onAdd }: { onAdd: (task: TaskInput) => void }) {
+  const { openTaskPanel, closeTaskPanel } = useAppChrome();
   const [isOpen, setIsOpen] = useState(false);
   const [draft, setDraft] = useState(emptyDraft);
   const [errors, setErrors] = useState<FieldErrors>({});
@@ -32,6 +34,12 @@ export function AddTaskPanel({ onAdd }: { onAdd: (task: TaskInput) => void }) {
     setDraft(emptyDraft);
     setErrors({});
     setIsOpen(false);
+    closeTaskPanel();
+  }
+
+  function handleOpen() {
+    setIsOpen(true);
+    openTaskPanel();
   }
 
   function handleAdd() {
@@ -51,7 +59,7 @@ export function AddTaskPanel({ onAdd }: { onAdd: (task: TaskInput) => void }) {
     return (
       <button
         type="button"
-        onClick={() => setIsOpen(true)}
+        onClick={handleOpen}
         className="flex items-center gap-2 rounded px-2 py-1.5 text-sm text-muted-foreground hover:bg-muted hover:text-foreground w-full"
       >
         <Plus className="h-4 w-4" />
