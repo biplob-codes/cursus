@@ -2,7 +2,6 @@
 
 import { X } from "lucide-react";
 import { TaskInput } from "@/schema/task";
-import { Button } from "@/ui/button";
 import {
   Select,
   SelectContent,
@@ -10,6 +9,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/ui/select";
+import { TaskDescriptionEditor } from "./task-description-editor";
 
 type Draft = {
   title: string;
@@ -24,24 +24,19 @@ export function TaskEditorPanel({
   draft,
   errors,
   onChange,
-  onSave,
-  onCancel,
+  onClose,
 }: {
   draft: Draft;
   errors: FieldErrors;
   onChange: (patch: Partial<Draft>) => void;
-  onSave: () => void;
-  onCancel: () => void;
+  onClose: () => void;
 }) {
   return (
-    <aside className="flex h-full min-h-screen w-1/2 flex-col border-l border-border bg-background">
-      <div className="flex items-center justify-between px-6 py-4">
-        <span className="text-sm font-medium text-muted-foreground">
-          New task
-        </span>
+    <aside className="flex h-full min-h-screen w-1/2 flex-col border-l border-border bg-muted/40">
+      <div className="flex items-center justify-end px-6 py-4">
         <button
           type="button"
-          onClick={onCancel}
+          onClick={onClose}
           className="rounded p-1 text-muted-foreground hover:bg-muted hover:text-foreground"
         >
           <X className="h-4 w-4" />
@@ -49,8 +44,7 @@ export function TaskEditorPanel({
         </button>
       </div>
 
-      <div className="flex flex-1 flex-col gap-6 overflow-y-auto px-6 pb-8">
-        {/* Title — borderless, Notion-style */}
+      <div className="flex flex-1 flex-col gap-6 overflow-y-auto px-6 pb-10">
         <div>
           <input
             autoFocus
@@ -65,7 +59,6 @@ export function TaskEditorPanel({
           )}
         </div>
 
-        {/* Status + Priority — borderless triggers */}
         <div className="flex flex-wrap items-center gap-2">
           <Select
             value={draft.status}
@@ -73,7 +66,7 @@ export function TaskEditorPanel({
               onChange({ status: value as TaskInput["status"] })
             }
           >
-            <SelectTrigger className="h-8 w-auto gap-1.5 border-0 bg-muted/60 px-2.5 shadow-none hover:bg-muted focus:ring-0">
+            <SelectTrigger className="h-8 w-auto gap-1.5 border-0 bg-background/60 px-2.5 shadow-none hover:bg-background focus:ring-0">
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
@@ -89,7 +82,7 @@ export function TaskEditorPanel({
               onChange({ priority: value as TaskInput["priority"] })
             }
           >
-            <SelectTrigger className="h-8 w-auto gap-1.5 border-0 bg-muted/60 px-2.5 shadow-none hover:bg-muted focus:ring-0">
+            <SelectTrigger className="h-8 w-auto gap-1.5 border-0 bg-background/60 px-2.5 shadow-none hover:bg-background focus:ring-0">
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
@@ -100,14 +93,10 @@ export function TaskEditorPanel({
           </Select>
         </div>
 
-        {/* Description — plain for now; rich editor in a later step */}
         <div className="flex-1">
-          <textarea
-            rows={12}
-            placeholder="Add a description…"
+          <TaskDescriptionEditor
             value={draft.description}
-            onChange={(e) => onChange({ description: e.target.value })}
-            className="w-full resize-none bg-transparent text-sm leading-relaxed text-foreground outline-none placeholder:text-muted-foreground/50"
+            onChange={(html) => onChange({ description: html })}
           />
           {errors.description && (
             <p className="mt-1 text-xs text-destructive">
@@ -115,15 +104,6 @@ export function TaskEditorPanel({
             </p>
           )}
         </div>
-      </div>
-
-      <div className="flex items-center gap-2 border-t border-border px-6 py-4">
-        <Button type="button" size="sm" onClick={onSave}>
-          Add task
-        </Button>
-        <Button type="button" size="sm" variant="ghost" onClick={onCancel}>
-          Cancel
-        </Button>
       </div>
     </aside>
   );

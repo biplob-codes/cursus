@@ -1,6 +1,6 @@
 "use client";
 
-import { useActionState, useEffect, useState } from "react";
+import { useActionState, useEffect, useMemo, useState } from "react";
 import { addDays } from "date-fns";
 import { PlanHeader } from "./plan-header";
 import { NoteField } from "./note-field";
@@ -22,6 +22,11 @@ const emptyDraft = {
 };
 
 type FieldErrors = Partial<Record<"title" | "description", string>>;
+
+function tryParseDraft(draft: typeof emptyDraft): TaskInput | null {
+  const parsed = taskInputSchema.safeParse(draft);
+  return parsed.success ? parsed.data : null;
+}
 
 export function CreatePlanView() {
   const { taskPanelOpen, openTaskPanel, closeTaskPanel } = useAppChrome();
@@ -46,8 +51,14 @@ export function CreatePlanView() {
     }
   }, [state, closeTaskPanel]);
 
+  // Include an in-progress draft when submitting with the panel still open
+  const tasksForSubmit = useMemo(() => {
+    if (!taskPanelOpen) return tasks;
+    const parsed = tryParseDraft(draft);
+    return parsed ? [...tasks, parsed] : tasks;
+  }, [tasks, draft, taskPanelOpen]);
+
   function handleOpenPanel() {
-    // Starting a new draft (or re-focusing the current one)
     if (!taskPanelOpen) {
       setDraft(emptyDraft);
       setErrors({});
@@ -55,20 +66,11 @@ export function CreatePlanView() {
     openTaskPanel();
   }
 
-  function handleCancelPanel() {
-    setDraft(emptyDraft);
-    setErrors({});
-    closeTaskPanel();
-  }
-
-  function handleSaveTask() {
-    const parsed = taskInputSchema.safeParse(draft);
-    if (!parsed.success) {
-      const flat = parsed.error.flatten().fieldErrors;
-      setErrors({ title: flat.title?.[0], description: flat.description?.[0] });
-      return;
+  function handleClosePanel() {
+    const parsed = tryParseDraft(draft);
+    if (parsed) {
+      setTasks((prev) => [...prev, parsed]);
     }
-    setTasks((prev) => [...prev, parsed.data]);
     setDraft(emptyDraft);
     setErrors({});
     closeTaskPanel();
@@ -81,7 +83,6 @@ export function CreatePlanView() {
         taskPanelOpen ? "min-h-screen" : "mx-auto max-w-2xl",
       )}
     >
-      {/* Left: plan form (half width when panel is open) */}
       <div
         className={cn(
           taskPanelOpen
@@ -125,7 +126,11 @@ export function CreatePlanView() {
             )}
           </div>
 
-          <input type="hidden" name="tasksJson" value={JSON.stringify(tasks)} />
+          <input
+            type="hidden"
+            name="tasksJson"
+            value={JSON.stringify(tasksForSubmit)}
+          />
 
           <div className="flex items-center gap-3 pt-2">
             <Button type="submit" disabled={isPending}>
@@ -141,14 +146,12 @@ export function CreatePlanView() {
         </form>
       </div>
 
-      {/* Right: task editor panel */}
       {taskPanelOpen && (
         <TaskEditorPanel
           draft={draft}
           errors={errors}
           onChange={(patch) => setDraft((prev) => ({ ...prev, ...patch }))}
-          onSave={handleSaveTask}
-          onCancel={handleCancelPanel}
+          onClose={handleClosePanel}
         />
       )}
     </div>

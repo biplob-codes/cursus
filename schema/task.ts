@@ -17,7 +17,7 @@ export const taskInputSchema = z.object({
   description: z
     .string()
     .trim()
-    .max(2000, "Keep the description under 2000 characters")
+    .max(50000, "Description is too long")
     .optional()
     .transform((value) => (value === "" ? undefined : value)),
   status: taskStatusEnum.default("TODO"),
