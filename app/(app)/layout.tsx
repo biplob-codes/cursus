@@ -5,7 +5,6 @@ import { headers } from "next/headers";
 
 const AppLayout = async ({ children }: { children: React.ReactNode }) => {
   const session = await auth.api.getSession({ headers: await headers() });
-  console.log("app", session);
 
   if (!session?.user) redirect("/signup");
   return (
