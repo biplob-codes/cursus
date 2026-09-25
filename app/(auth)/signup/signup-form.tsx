@@ -2,6 +2,7 @@
 
 import { signUpAction, SignUpState } from "@/actions/signup";
 import { useActionState } from "react";
+import Link from "next/link";
 
 const initialState: SignUpState = {
   values: { name: "", email: "", password: "" },
@@ -15,21 +16,27 @@ export function SignUpForm() {
   );
 
   return (
-    <form action={formAction} className="w-full max-w-[400px]">
-      <h1 className="text-[1.6rem] font-semibold text-[#37352F] tracking-[-0.01em]">
+    <form action={formAction} className="w-full max-w-[360px]">
+      <h1 className="text-2xl font-semibold tracking-tight text-foreground">
         Create your account
       </h1>
-      <p className="mt-1.5 text-sm text-[#787774]">
-        Start with your name, email, and a password.
+      <p className="mt-1.5 text-sm text-muted-foreground">
+        Already have an account?{" "}
+        <Link
+          href="/signin"
+          className="text-primary hover:underline underline-offset-2"
+        >
+          Sign in
+        </Link>
       </p>
 
       {state.errors.form && (
-        <div className="mt-5 rounded-[3px] border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
+        <div className="mt-5 rounded-md border border-destructive/20 bg-destructive/10 px-3 py-2 text-sm text-destructive">
           {state.errors.form}
         </div>
       )}
 
-      <div className="mt-6 flex flex-col gap-4">
+      <div className="mt-6 flex flex-col gap-3.5">
         <Field
           label="Name"
           name="name"
@@ -59,7 +66,7 @@ export function SignUpForm() {
       <button
         type="submit"
         disabled={isPending}
-        className="mt-6 w-full rounded-[3px] bg-[#37352F] py-[9px] text-sm font-medium text-white transition-colors hover:bg-[#2F2E2B] disabled:cursor-not-allowed disabled:opacity-60"
+        className="mt-6 w-full rounded-md bg-primary py-2 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90 disabled:cursor-not-allowed disabled:opacity-60"
       >
         {isPending ? "Creating account…" : "Create account"}
       </button>
@@ -86,7 +93,7 @@ function Field({
     <div>
       <label
         htmlFor={name}
-        className="mb-1.5 block text-[13px] font-medium text-[#37352F]"
+        className="mb-1.5 block text-sm font-medium text-foreground"
       >
         {label}
       </label>
@@ -97,9 +104,9 @@ function Field({
         autoComplete={autoComplete}
         defaultValue={defaultValue}
         aria-invalid={Boolean(error)}
-        className="w-full rounded-[3px] border border-[#E9E9E7] bg-white px-3 py-2 text-sm text-[#37352F] outline-none transition-shadow placeholder:text-[#9B9A97] focus:border-[#2383E2] focus:ring-2 focus:ring-[#2383E2]/25"
+        className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground outline-none transition-colors placeholder:text-muted-foreground focus:border-ring focus:ring-2 focus:ring-ring/20"
       />
-      {error && <p className="mt-1 text-xs text-red-600">{error}</p>}
+      {error && <p className="mt-1.5 text-xs text-destructive">{error}</p>}
     </div>
   );
 }
