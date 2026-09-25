@@ -2,10 +2,9 @@
 
 import { DailyPlansIcon } from "@/icons/daily-plans";
 import { cn } from "@/lib/utils";
-import { Moon, Settings, Sun } from "lucide-react";
+import { Settings } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useEffect, useState } from "react";
 
 const navItems = [
   { label: "Daily plans", href: "/plans", icon: DailyPlansIcon },
@@ -13,23 +12,6 @@ const navItems = [
 
 export default function Sidebar() {
   const pathname = usePathname();
-  const [mounted, setMounted] = useState(false);
-  const [isDark, setIsDark] = useState(false);
-
-  useEffect(() => {
-    setMounted(true);
-    setIsDark(document.documentElement.classList.contains("dark"));
-  }, []);
-
-  const ThemeIcon = isDark ? Sun : Moon;
-  const themeLabel = isDark ? "Light" : "Dark";
-
-  const toggleTheme = () => {
-    const next = !document.documentElement.classList.contains("dark");
-    document.documentElement.classList.toggle("dark", next);
-    localStorage.setItem("theme", next ? "dark" : "light");
-    setIsDark(next);
-  };
 
   return (
     <aside className="flex h-screen w-60 flex-col border-r border-border bg-accent/50">
@@ -70,20 +52,7 @@ export default function Sidebar() {
         </div>
       </nav>
 
-      <div className="px-2 py-3 space-y-0.5">
-        <button
-          type="button"
-          onClick={toggleTheme}
-          className={cn(
-            "flex w-full items-center gap-2 rounded-md px-2 py-1.5 transition-colors",
-            "hover:bg-accent hover:text-foreground",
-            "text-muted-foreground",
-          )}
-        >
-          <ThemeIcon className="h-5 w-5 shrink-0" strokeWidth={1.8} />
-          <span>{mounted ? themeLabel : ""}</span>
-        </button>
-
+      <div className="px-2 py-3">
         <Link
           href="/settings"
           className={cn(
