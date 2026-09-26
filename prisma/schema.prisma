@@ -8,10 +8,34 @@ datasource db {
 }
 
 model Plan {
-  id    String   @id @default(uuid())
-  note  String?
-  date  DateTime @db.Date
-  tasks Task[]
+  id        String   @id @default(uuid())
+  note      String?
+  date      DateTime @db.Date
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  tasks     Task[]
+
+  @@index([userId])
+  @@index([userId, date])
+  @@index([date])
+}
+
+model User {
+  id            String    @id
+  name          String
+  email         String
+  emailVerified Boolean   @default(false)
+  image         String?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+  sessions      Session[]
+  accounts      Account[]
+  plans         Plan[]
+
+  @@unique([email])
+  @@map("user")
 }
 
 model Task {
@@ -38,21 +62,6 @@ enum TaskPriority {
   LOW
   MEDIUM
   HIGH
-}
-
-model User {
-  id            String    @id
-  name          String
-  email         String
-  emailVerified Boolean   @default(false)
-  image         String?
-  createdAt     DateTime  @default(now())
-  updatedAt     DateTime  @updatedAt
-  sessions      Session[]
-  accounts      Account[]
-
-  @@unique([email])
-  @@map("user")
 }
 
 model Session {
