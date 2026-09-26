@@ -1,12 +1,11 @@
 import { notFound, redirect } from "next/navigation";
 import { format } from "date-fns";
+import { headers } from "next/headers";
 import { Task } from "@/generated/prisma/client";
 import { prisma } from "@/lib/prisma";
-import { getRelativeDayLabel } from "@/lib/date";
-import { Badge } from "@/ui/badge";
-import { TaskCheckbox } from "./task-checkbox";
 import { auth } from "@/lib/auth";
-import { headers } from "next/headers";
+import { getRelativeDayLabel } from "@/lib/date";
+import { TaskRow } from "./task-row";
 
 const priorityRank: Record<Task["priority"], number> = {
   HIGH: 0,
@@ -14,46 +13,23 @@ const priorityRank: Record<Task["priority"], number> = {
   LOW: 2,
 };
 
-const statusLabel: Record<Task["status"], string> = {
-  TODO: "To-do",
-  IN_PROGRESS: "In progress",
-  DONE: "Done",
-};
-
-const priorityLabel: Record<Task["priority"], string> = {
-  LOW: "Low",
-  MEDIUM: "Medium",
-  HIGH: "High",
-};
-
-const statusClass: Record<Task["status"], string> = {
-  TODO: "bg-muted text-muted-foreground",
-  IN_PROGRESS: "bg-blue-100 text-blue-700 dark:bg-blue-950 dark:text-blue-300",
-  DONE: "bg-green-100 text-green-700 dark:bg-green-950 dark:text-green-300",
-};
-
-const priorityClass: Record<Task["priority"], string> = {
-  LOW: "bg-muted text-muted-foreground",
-  MEDIUM: "bg-amber-100 text-amber-700 dark:bg-amber-950 dark:text-amber-300",
-  HIGH: "bg-red-100 text-red-700 dark:bg-red-950 dark:text-red-300",
-};
-
 export default async function PlanDetailPage({
   params,
 }: {
   params: Promise<{ id: string }>;
 }) {
-  const { id } = await params;
-
   const session = await auth.api.getSession({ headers: await headers() });
   if (!session?.user?.id) redirect("/signin");
+
+  const { id } = await params;
 
   const plan = await prisma.plan.findFirst({
     where: { id, userId: session.user.id },
     include: { tasks: true },
   });
+
   if (!plan) notFound();
-  // Open tasks first (by priority), done tasks sink to the bottom.
+
   const tasks = [...plan.tasks].sort((a, b) => {
     const aDone = a.status === "DONE" ? 1 : 0;
     const bDone = b.status === "DONE" ? 1 : 0;
@@ -61,75 +37,51 @@ export default async function PlanDetailPage({
     return priorityRank[a.priority] - priorityRank[b.priority];
   });
 
+  const total = tasks.length;
+  const doneCount = tasks.filter((t) => t.status === "DONE").length;
+  const progress = total === 0 ? 0 : Math.round((doneCount / total) * 100);
+  const relative = getRelativeDayLabel(plan.date);
+  const relativeLabel = relative.charAt(0).toUpperCase() + relative.slice(1);
+
   return (
-    <div className="mx-auto w-full max-w-2xl space-y-6">
-      <div>
-        <h1 className="text-2xl font-semibold tracking-tight text-foreground">
-          Plan for {getRelativeDayLabel(plan.date)}{" "}
-          <span className="font-normal text-muted-foreground">
-            ({format(plan.date, "d MMMM yyyy")})
-          </span>
-        </h1>
-        {plan.note && (
-          <p className="mt-2 whitespace-pre-wrap text-sm text-muted-foreground">
+    <div className="mx-auto w-full max-w-4xl space-y-8">
+      <div className="space-y-4">
+        <div className="flex items-center justify-between">
+          <h1 className="text-2xl font-semibold tracking-tight text-foreground">
+            {format(plan.date, "d MMMM yyyy")}
+            <span className="ml-2 font-normal text-muted-foreground">
+              ({relativeLabel})
+            </span>
+          </h1>
+
+          {total > 0 && (
+            <span className="shrink-0 text-sm tabular-nums text-muted-foreground">
+              {doneCount}/{total}
+              <span className="ml-1 text-muted-foreground/70">
+                ({progress}%)
+              </span>
+            </span>
+          )}
+        </div>
+
+        {plan.note ? (
+          <p className="whitespace-pre-wrap text-sm leading-relaxed text-muted-foreground">
             {plan.note}
           </p>
-        )}
+        ) : null}
       </div>
 
-      <div className="space-y-2">
-        <h2 className="text-sm font-medium text-foreground">Tasks</h2>
-
+      <div className="space-y-1">
         {tasks.length === 0 ? (
-          <p className="px-2 text-sm text-muted-foreground">
+          <p className="px-2 py-3 text-sm text-muted-foreground">
             No tasks for this plan yet.
           </p>
         ) : (
-          <div className="space-y-0.5">
-            {tasks.map((task) => {
-              const done = task.status === "DONE";
-              return (
-                <div
-                  key={task.id}
-                  className="flex items-start gap-3 rounded px-2 py-1.5 hover:bg-muted/60"
-                >
-                  <TaskCheckbox taskId={task.id} done={done} />
-                  <div className="min-w-0 flex-1 space-y-1">
-                    <p
-                      className={
-                        done
-                          ? "truncate text-sm text-muted-foreground line-through"
-                          : "truncate text-sm font-medium text-foreground"
-                      }
-                    >
-                      {task.title}
-                    </p>
-                    {task.description && (
-                      <p className="line-clamp-1 text-xs text-muted-foreground">
-                        {task.description}
-                      </p>
-                    )}
-                    <div className="flex gap-1.5">
-                      {!done && (
-                        <Badge
-                          variant="secondary"
-                          className={`text-[11px] ${statusClass[task.status]}`}
-                        >
-                          {statusLabel[task.status]}
-                        </Badge>
-                      )}
-                      <Badge
-                        variant="secondary"
-                        className={`text-[11px] ${priorityClass[task.priority]}`}
-                      >
-                        {priorityLabel[task.priority]}
-                      </Badge>
-                    </div>
-                  </div>
-                </div>
-              );
-            })}
-          </div>
+          <ul className="space-y-0.5">
+            {tasks.map((task) => (
+              <TaskRow key={task.id} task={task} />
+            ))}
+          </ul>
         )}
       </div>
     </div>

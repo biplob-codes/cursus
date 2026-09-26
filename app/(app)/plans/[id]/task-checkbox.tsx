@@ -1,35 +1,21 @@
 "use client";
 
-import { useState, useTransition } from "react";
 import { Checkbox } from "@/ui/checkbox";
-import { toggleTaskDone } from "@/actions/task";
 
 export function TaskCheckbox({
   taskId,
   done,
+  onCheckedChange,
 }: {
   taskId: string;
   done: boolean;
+  onCheckedChange?: (next: boolean) => void;
 }) {
-  const [checked, setChecked] = useState(done);
-  const [isPending, startTransition] = useTransition();
-
-  function handleChange(next: boolean) {
-    setChecked(next); // optimistic — flips instantly, no spinner wait
-    startTransition(async () => {
-      try {
-        await toggleTaskDone(taskId, next);
-      } catch {
-        setChecked(!next); // revert if the write failed
-      }
-    });
-  }
-
   return (
     <Checkbox
-      checked={checked}
-      disabled={isPending}
-      onCheckedChange={(value) => handleChange(value === true)}
+      checked={done}
+      onCheckedChange={(value) => onCheckedChange?.(value === true)}
+      aria-label={done ? "Mark incomplete" : "Mark complete"}
       className="mt-0.5"
     />
   );
