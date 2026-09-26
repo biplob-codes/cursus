@@ -1,7 +1,6 @@
 "use client";
 
 import { useActionState, useEffect, useMemo, useState } from "react";
-import { addDays } from "date-fns";
 import { PlanHeader } from "./plan-header";
 import { NoteField } from "./note-field";
 import { AddTaskPanel } from "./add-task-panel";
@@ -13,7 +12,7 @@ import { initialActionState } from "@/actions/action-state";
 import { Button } from "@/ui/button";
 import { useAppChrome } from "@/app/app-chrome-context";
 import { cn } from "@/lib/utils";
-
+import { addDays, format } from "date-fns";
 const emptyDraft = {
   title: "",
   description: "",
@@ -174,8 +173,7 @@ export function CreatePlanView() {
               <p className="text-xs text-destructive">{state.errors.date[0]}</p>
             )}
           </div>
-          <input type="hidden" name="date" value={date.toISOString()} />
-
+          <input type="hidden" name="date" value={format(date, "yyyy-MM-dd")} />
           <div className="space-y-1.5">
             <NoteField value={note} onChange={setNote} />
             {state.errors?.note && (
