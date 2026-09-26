@@ -1,10 +1,12 @@
-import { notFound } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
 import { format } from "date-fns";
 import { Task } from "@/generated/prisma/client";
 import { prisma } from "@/lib/prisma";
 import { getRelativeDayLabel } from "@/lib/date";
 import { Badge } from "@/ui/badge";
 import { TaskCheckbox } from "./task-checkbox";
+import { auth } from "@/lib/auth";
+import { headers } from "next/headers";
 
 const priorityRank: Record<Task["priority"], number> = {
   HIGH: 0,
@@ -43,13 +45,14 @@ export default async function PlanDetailPage({
 }) {
   const { id } = await params;
 
-  const plan = await prisma.plan.findUnique({
-    where: { id },
+  const session = await auth.api.getSession({ headers: await headers() });
+  if (!session?.user?.id) redirect("/signin");
+
+  const plan = await prisma.plan.findFirst({
+    where: { id, userId: session.user.id },
     include: { tasks: true },
   });
-
   if (!plan) notFound();
-
   // Open tasks first (by priority), done tasks sink to the bottom.
   const tasks = [...plan.tasks].sort((a, b) => {
     const aDone = a.status === "DONE" ? 1 : 0;

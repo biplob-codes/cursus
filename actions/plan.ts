@@ -1,17 +1,24 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { headers } from "next/headers";
 import { ActionState } from "./action-state";
 import { createPlanWithTasksSchema } from "@/schema/plan";
 import { prisma } from "@/lib/prisma";
+import { auth } from "@/lib/auth";
 
 export async function createPlanWithTasks(
   _prevState: ActionState,
   formData: FormData,
 ): Promise<ActionState> {
-  // Tasks are built up client-side and shipped as one JSON blob (see
-  // create-plan-view.tsx's hidden "tasksJson" input) rather than as
-  // indexed form fields — much simpler to serialize an array that way.
+  const session = await auth.api.getSession({ headers: await headers() });
+  if (!session?.user?.id) {
+    return {
+      status: "error",
+      message: "You must be signed in to create a plan.",
+    };
+  }
+
   let rawTasks: unknown;
   try {
     rawTasks = JSON.parse(String(formData.get("tasksJson") ?? "[]"));
@@ -37,10 +44,13 @@ export async function createPlanWithTasks(
   }
 
   const { date, note, tasks } = parsed.data;
+  const userId = session.user.id;
 
   try {
     await prisma.$transaction(async (tx) => {
-      const plan = await tx.plan.create({ data: { date, note } });
+      const plan = await tx.plan.create({
+        data: { date, note, userId },
+      });
 
       if (tasks.length > 0) {
         await tx.task.createMany({

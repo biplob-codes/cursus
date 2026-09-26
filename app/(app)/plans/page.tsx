@@ -2,9 +2,16 @@ import { prisma } from "@/lib/prisma";
 import { Button } from "@/ui/button";
 import Link from "next/link";
 import { PlanListItem } from "./plan-list-item";
+import { auth } from "@/lib/auth";
+import { redirect } from "next/navigation";
+import { headers } from "next/headers";
 
 export default async function PlansPage() {
+  const session = await auth.api.getSession({ headers: await headers() });
+  if (!session?.user?.id) redirect("/signin");
+
   const plans = await prisma.plan.findMany({
+    where: { userId: session.user.id },
     orderBy: { date: "desc" },
     include: { tasks: true },
   });
