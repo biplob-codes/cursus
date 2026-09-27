@@ -3,11 +3,49 @@
 import { useEffect, useState } from "react";
 import { Moon, Sun, LogOut } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { authClient } from "@/lib/auth-client";
+import { authClient, useSession } from "@/lib/auth-client";
 import { useRouter } from "next/navigation";
+
+function UserAvatar({
+  name,
+  image,
+  size = "lg",
+}: {
+  name: string;
+  image: string | null | undefined;
+  size?: "sm" | "lg";
+}) {
+  const sizeClass = size === "lg" ? "h-16 w-16 text-xl" : "h-5 w-5 text-[11px]";
+
+  if (image) {
+    return (
+      <img
+        src={image}
+        alt={name}
+        className={cn("shrink-0 rounded-full object-cover", sizeClass)}
+        referrerPolicy="no-referrer"
+      />
+    );
+  }
+
+  const initial = name?.charAt(0)?.toUpperCase() || "?";
+  return (
+    <div
+      className={cn(
+        "flex shrink-0 items-center justify-center rounded-full bg-muted font-medium text-muted-foreground",
+        sizeClass,
+      )}
+    >
+      {initial}
+    </div>
+  );
+}
 
 export function ProfileForm() {
   const router = useRouter();
+  const { data: session, isPending } = useSession();
+  const user = session?.user;
+
   const [mounted, setMounted] = useState(false);
   const [theme, setTheme] = useState<"light" | "dark">("light");
   const [isLoggingOut, setIsLoggingOut] = useState(false);
@@ -42,15 +80,37 @@ export function ProfileForm() {
 
   return (
     <div className="space-y-10">
-      {/* Header */}
-      <div>
-        <h1 className="text-2xl font-semibold tracking-tight text-foreground">
-          Profile
-        </h1>
-        <p className="mt-1 text-sm text-muted-foreground">
-          Manage your appearance and account.
-        </p>
-      </div>
+      {/* Identity Section */}
+      <section className="space-y-4">
+        <div>
+          <h2 className="text-sm font-medium text-foreground">Account</h2>
+          <p className="mt-0.5 text-sm text-muted-foreground">
+            Your profile information from GitHub.
+          </p>
+        </div>
+
+        {isPending || !user ? (
+          <div className="flex items-center gap-4 rounded-lg border border-border bg-accent/20 px-4 py-4">
+            <div className="h-16 w-16 animate-pulse rounded-full bg-muted" />
+            <div className="space-y-2">
+              <div className="h-4 w-32 animate-pulse rounded bg-muted" />
+              <div className="h-3 w-48 animate-pulse rounded bg-muted" />
+            </div>
+          </div>
+        ) : (
+          <div className="flex items-center gap-4 rounded-lg border border-border bg-accent/20 px-4 py-4">
+            <UserAvatar name={user.name} image={user.image} size="lg" />
+            <div className="min-w-0 flex-1">
+              <p className="truncate text-base font-medium text-foreground">
+                {user.name}
+              </p>
+              <p className="truncate text-sm text-muted-foreground">
+                {user.email}
+              </p>
+            </div>
+          </div>
+        )}
+      </section>
 
       {/* Appearance Section */}
       <section className="space-y-4">
@@ -73,7 +133,7 @@ export function ProfileForm() {
                 : "border-border",
             )}
           >
-            <div className="flex h-10 w-10 items-center justify-center rounded-md bg-background border border-border">
+            <div className="flex h-10 w-10 items-center justify-center rounded-md border border-border bg-background">
               <Sun className="h-5 w-5 text-foreground" strokeWidth={1.8} />
             </div>
             <span className="text-sm font-medium text-foreground">Light</span>
@@ -90,7 +150,7 @@ export function ProfileForm() {
                 : "border-border",
             )}
           >
-            <div className="flex h-10 w-10 items-center justify-center rounded-md bg-background border border-border">
+            <div className="flex h-10 w-10 items-center justify-center rounded-md border border-border bg-background">
               <Moon className="h-5 w-5 text-foreground" strokeWidth={1.8} />
             </div>
             <span className="text-sm font-medium text-foreground">Dark</span>
@@ -98,10 +158,10 @@ export function ProfileForm() {
         </div>
       </section>
 
-      {/* Account Section */}
-      <section className="space-y-4">
+      {/* Sign out Section */}
+      <section className="space-y-4 border-t border-border pt-8">
         <div>
-          <h2 className="text-sm font-medium text-foreground">Account</h2>
+          <h2 className="text-sm font-medium text-foreground">Sign out</h2>
           <p className="mt-0.5 text-sm text-muted-foreground">
             Sign out of your account on this device.
           </p>
@@ -113,7 +173,7 @@ export function ProfileForm() {
           disabled={isLoggingOut}
           className={cn(
             "flex items-center gap-2 rounded-md border border-border px-3 py-2 text-sm font-medium transition-colors",
-            "text-foreground hover:bg-accent hover:text-foreground",
+            "text-muted-foreground hover:bg-accent hover:text-foreground",
             "disabled:cursor-not-allowed disabled:opacity-60",
           )}
         >
