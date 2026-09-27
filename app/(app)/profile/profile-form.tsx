@@ -3,10 +3,10 @@
 import { useEffect, useState } from "react";
 import { Moon, Sun, LogOut } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { authClient } from "@/lib/auth-client"; // adjust path if needed
+import { authClient } from "@/lib/auth-client";
 import { useRouter } from "next/navigation";
 
-export function SettingsForm() {
+export function ProfileForm() {
   const router = useRouter();
   const [mounted, setMounted] = useState(false);
   const [theme, setTheme] = useState<"light" | "dark">("light");
@@ -45,7 +45,7 @@ export function SettingsForm() {
       {/* Header */}
       <div>
         <h1 className="text-2xl font-semibold tracking-tight text-foreground">
-          Settings
+          Profile
         </h1>
         <p className="mt-1 text-sm text-muted-foreground">
           Manage your appearance and account.

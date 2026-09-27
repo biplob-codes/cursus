@@ -82,14 +82,14 @@ export default function Sidebar() {
         </div>
       </nav>
 
-      {/* User / Settings trigger — Notion style */}
+      {/* User / Profile trigger — Notion style */}
       <div className="px-2 py-3">
         <Link
-          href="/settings"
+          href="/profile"
           className={cn(
             "flex items-center gap-2 rounded-md px-2 py-1.5 transition-colors",
             "hover:bg-accent hover:text-foreground",
-            pathname === "/settings"
+            pathname === "/profile"
               ? "bg-accent text-foreground"
               : "text-muted-foreground",
           )}
