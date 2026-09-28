@@ -1,7 +1,7 @@
 import { prisma } from "@/lib/prisma";
 import { Button } from "@/ui/button";
 import Link from "next/link";
-import { isSameDay, startOfDay } from "date-fns";
+import { startOfDay } from "date-fns";
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { auth } from "@/lib/auth";
@@ -19,24 +19,47 @@ export default async function PlansPage({ searchParams }: PlansPageProps) {
   const session = await auth.api.getSession({ headers: await headers() });
   if (!session?.user?.id) redirect("/signin");
 
+  const userId = session.user.id;
   const params = await searchParams;
   const requestedPage = Math.max(1, Number(params.page) || 1);
 
-  const plans = await prisma.plan.findMany({
-    where: { userId: session.user.id },
+  const today = startOfDay(new Date());
+
+  // Today's plans — always full list (typically 0–1)
+  const todayPlans = await prisma.plan.findMany({
+    where: {
+      userId,
+      date: today,
+    },
     orderBy: { date: "desc" },
     include: { tasks: true },
   });
 
-  const today = startOfDay(new Date());
-  const todayPlans = plans.filter((plan) => isSameDay(plan.date, today));
-  const otherPlans = plans.filter((plan) => !isSameDay(plan.date, today));
+  // Total count of non-today plans (for pagination)
+  const totalOtherPlans = await prisma.plan.count({
+    where: {
+      userId,
+      date: { not: today },
+    },
+  });
 
-  // Frontend-only pagination for "All plans" (backend will take over next)
-  const totalPages = Math.max(1, Math.ceil(otherPlans.length / PAGE_SIZE));
+  const totalPages = Math.max(1, Math.ceil(totalOtherPlans / PAGE_SIZE));
   const page = Math.min(requestedPage, totalPages);
-  const start = (page - 1) * PAGE_SIZE;
-  const paginatedPlans = otherPlans.slice(start, start + PAGE_SIZE);
+  const skip = (page - 1) * PAGE_SIZE;
+
+  // Only the current page of "All plans"
+  const otherPlans = await prisma.plan.findMany({
+    where: {
+      userId,
+      date: { not: today },
+    },
+    orderBy: { date: "desc" },
+    skip,
+    take: PAGE_SIZE,
+    include: { tasks: true },
+  });
+
+  const hasAnyPlans = todayPlans.length > 0 || totalOtherPlans > 0;
 
   return (
     <div className="mx-auto w-full max-w-4xl space-y-10">
@@ -49,7 +72,7 @@ export default async function PlansPage({ searchParams }: PlansPageProps) {
         </Button>
       </div>
 
-      {plans.length === 0 ? (
+      {!hasAnyPlans ? (
         <p className="px-2 text-sm text-muted-foreground">
           No plans yet.{" "}
           <Link
@@ -88,7 +111,7 @@ export default async function PlansPage({ searchParams }: PlansPageProps) {
             <h2 className="px-2 text-xs font-medium uppercase tracking-wide text-muted-foreground">
               All plans
             </h2>
-            <PlansTable plans={paginatedPlans} />
+            <PlansTable plans={otherPlans} />
             <Pagination page={page} totalPages={totalPages} basePath="/plans" />
           </section>
         </>
