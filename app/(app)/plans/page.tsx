@@ -7,10 +7,20 @@ import { redirect } from "next/navigation";
 import { auth } from "@/lib/auth";
 import { TodaysPlan } from "./todays-plan";
 import { PlansTable } from "./plans-table";
+import { Pagination } from "@/ui/pagination";
 
-export default async function PlansPage() {
+const PAGE_SIZE = 7;
+
+type PlansPageProps = {
+  searchParams: Promise<{ page?: string }>;
+};
+
+export default async function PlansPage({ searchParams }: PlansPageProps) {
   const session = await auth.api.getSession({ headers: await headers() });
   if (!session?.user?.id) redirect("/signin");
+
+  const params = await searchParams;
+  const requestedPage = Math.max(1, Number(params.page) || 1);
 
   const plans = await prisma.plan.findMany({
     where: { userId: session.user.id },
@@ -21,6 +31,12 @@ export default async function PlansPage() {
   const today = startOfDay(new Date());
   const todayPlans = plans.filter((plan) => isSameDay(plan.date, today));
   const otherPlans = plans.filter((plan) => !isSameDay(plan.date, today));
+
+  // Frontend-only pagination for "All plans" (backend will take over next)
+  const totalPages = Math.max(1, Math.ceil(otherPlans.length / PAGE_SIZE));
+  const page = Math.min(requestedPage, totalPages);
+  const start = (page - 1) * PAGE_SIZE;
+  const paginatedPlans = otherPlans.slice(start, start + PAGE_SIZE);
 
   return (
     <div className="mx-auto w-full max-w-4xl space-y-10">
@@ -72,7 +88,8 @@ export default async function PlansPage() {
             <h2 className="px-2 text-xs font-medium uppercase tracking-wide text-muted-foreground">
               All plans
             </h2>
-            <PlansTable plans={otherPlans} />
+            <PlansTable plans={paginatedPlans} />
+            <Pagination page={page} totalPages={totalPages} basePath="/plans" />
           </section>
         </>
       )}
