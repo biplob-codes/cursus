@@ -28,7 +28,6 @@ function UserAvatar({
     );
   }
 
-  // Fallback: first letter of name
   const initial = name?.charAt(0)?.toUpperCase() || "?";
   return (
     <div className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-muted text-[11px] font-medium text-muted-foreground">
@@ -40,14 +39,13 @@ function UserAvatar({
 export default function Sidebar() {
   const pathname = usePathname();
   const { data: session, isPending } = useSession();
-
   const user = session?.user;
 
   return (
-    <aside className="flex h-screen w-60 flex-col border-r border-border bg-accent/50">
+    <aside className="flex h-full w-60 flex-col border-r border-border bg-accent/50">
       <Link href={"/"}>
-        <div className="px-3 py-3 flex items-center gap-2 text-lg">
-          <div className="flex h-5 w-5 items-center justify-center rounded bg-blue-500 text-white font-semibold">
+        <div className="flex items-center gap-2 px-3 py-3 text-lg">
+          <div className="flex h-5 w-5 items-center justify-center rounded bg-blue-500 font-semibold text-white">
             C
           </div>
           <span className="flex-1 text-left">Cursus</span>
@@ -82,7 +80,6 @@ export default function Sidebar() {
         </div>
       </nav>
 
-      {/* User / Profile trigger — Notion style */}
       <div className="px-2 py-3">
         <Link
           href="/profile"

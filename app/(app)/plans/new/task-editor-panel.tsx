@@ -76,7 +76,7 @@ export function TaskEditorPanel({
     priorityOptions[1];
 
   return (
-    <aside className="flex h-full min-h-screen w-1/2 flex-col border-l border-border bg-muted/40">
+    <aside className="flex h-full w-full flex-col border-l border-border bg-muted/40">
       <div className="flex items-center justify-end px-6 py-4">
         <button
           type="button"

@@ -13,12 +13,15 @@ import { Button } from "@/ui/button";
 import { useAppChrome } from "@/app/app-chrome-context";
 import { cn } from "@/lib/utils";
 import { addDays, format } from "date-fns";
+
 const emptyDraft = {
   title: "",
   description: "",
   status: "TODO" as TaskInput["status"],
   priority: "MEDIUM" as TaskInput["priority"],
 };
+
+const PANEL_MS = 300;
 
 type FieldErrors = Partial<Record<"title" | "description", string>>;
 
@@ -51,6 +54,24 @@ export function CreatePlanView() {
     initialActionState,
   );
 
+  // Keep panel in DOM while exit animation plays
+  const [panelMounted, setPanelMounted] = useState(false);
+  const [panelEntered, setPanelEntered] = useState(false);
+
+  useEffect(() => {
+    if (taskPanelOpen) {
+      setPanelMounted(true);
+      const id = requestAnimationFrame(() => {
+        requestAnimationFrame(() => setPanelEntered(true));
+      });
+      return () => cancelAnimationFrame(id);
+    }
+
+    setPanelEntered(false);
+    const t = setTimeout(() => setPanelMounted(false), PANEL_MS);
+    return () => clearTimeout(t);
+  }, [taskPanelOpen]);
+
   useEffect(() => {
     if (state.status === "success") {
       setDate(addDays(new Date(), 1));
@@ -64,7 +85,6 @@ export function CreatePlanView() {
     }
   }, [state, closeTaskPanel]);
 
-  // List rows reflect the draft live while editing an existing task
   const displayTasks = useMemo(() => {
     if (!taskPanelOpen || editingIndex === null) return tasks;
     return tasks.map((task, index) =>
@@ -122,16 +142,9 @@ export function CreatePlanView() {
     if (taskPanelOpen) {
       commitDraftIfValid();
     }
-    // After commit, index is still correct for the same item
-    const task =
-      editingIndex !== null && tryParseDraft(draft) && index === editingIndex
-        ? tryParseDraft(draft)!
-        : tasks[index];
-    // Prefer latest committed state
     const source = tasks[index];
-    if (!source && !task) return;
+    if (!source) return;
 
-    // Re-read from tasks after a sync commit is async; use draft overlay if same index
     const next =
       taskPanelOpen && editingIndex === index
         ? (tryParseDraft(draft) ?? source)
@@ -153,83 +166,108 @@ export function CreatePlanView() {
   }
 
   return (
-    <div
-      className={cn(
-        "flex w-full",
-        taskPanelOpen ? "min-h-screen" : "mx-auto max-w-2xl",
-      )}
-    >
+    <div className="flex h-full min-h-0 w-full overflow-hidden">
+      {/* Main form column */}
       <div
         className={cn(
-          taskPanelOpen
-            ? "w-1/2 overflow-y-auto px-10 py-12"
-            : "w-full space-y-6",
+          "min-w-0 transition-[width] duration-300 ease-out",
+          panelEntered ? "w-1/2 overflow-y-auto px-10 py-12" : "w-full",
         )}
       >
-        <form action={formAction} className="space-y-6">
-          <div className="space-y-1.5">
-            <PlanHeader date={date} onDateChange={setDate} />
-            {state.errors?.date && (
-              <p className="text-xs text-destructive">{state.errors.date[0]}</p>
-            )}
-          </div>
-          <input type="hidden" name="date" value={format(date, "yyyy-MM-dd")} />
-          <div className="space-y-1.5">
-            <NoteField value={note} onChange={setNote} />
-            {state.errors?.note && (
-              <p className="text-xs text-destructive">{state.errors.note[0]}</p>
-            )}
-          </div>
-
-          <div className="space-y-2">
-            <h2 className="text-sm font-medium text-foreground">Tasks</h2>
-            <TaskList
-              tasks={displayTasks}
-              selectedIndex={taskPanelOpen ? editingIndex : null}
-              onSelect={handleSelectTask}
+        <div
+          className={cn(
+            "space-y-6 transition-[max-width] duration-300 ease-out",
+            panelEntered ? "max-w-none" : "mx-auto max-w-2xl",
+          )}
+        >
+          <form action={formAction} className="space-y-6">
+            <div className="space-y-1.5">
+              <PlanHeader date={date} onDateChange={setDate} />
+              {state.errors?.date && (
+                <p className="text-xs text-destructive">
+                  {state.errors.date[0]}
+                </p>
+              )}
+            </div>
+            <input
+              type="hidden"
+              name="date"
+              value={format(date, "yyyy-MM-dd")}
             />
-            <AddTaskPanel
-              isOpen={taskPanelOpen}
-              isEditingExisting={editingIndex !== null}
-              draft={taskPanelOpen ? draft : null}
-              onOpen={handleOpenPanel}
+            <div className="space-y-1.5">
+              <NoteField value={note} onChange={setNote} />
+              {state.errors?.note && (
+                <p className="text-xs text-destructive">
+                  {state.errors.note[0]}
+                </p>
+              )}
+            </div>
+
+            <div className="space-y-2">
+              <h2 className="text-sm font-medium text-foreground">Tasks</h2>
+              <TaskList
+                tasks={displayTasks}
+                selectedIndex={taskPanelOpen ? editingIndex : null}
+                onSelect={handleSelectTask}
+              />
+              <AddTaskPanel
+                isOpen={taskPanelOpen}
+                isEditingExisting={editingIndex !== null}
+                draft={taskPanelOpen ? draft : null}
+                onOpen={handleOpenPanel}
+              />
+              {state.errors?.tasks && (
+                <p className="text-xs text-destructive">
+                  {state.errors.tasks[0]}
+                </p>
+              )}
+            </div>
+
+            <input
+              type="hidden"
+              name="tasksJson"
+              value={JSON.stringify(tasksForSubmit)}
             />
-            {state.errors?.tasks && (
-              <p className="text-xs text-destructive">
-                {state.errors.tasks[0]}
-              </p>
-            )}
-          </div>
 
-          <input
-            type="hidden"
-            name="tasksJson"
-            value={JSON.stringify(tasksForSubmit)}
-          />
-
-          <div className="flex items-center gap-3 pt-2">
-            <Button type="submit" disabled={isPending}>
-              {isPending ? "Creating…" : "Create plan"}
-            </Button>
-            {state.status === "error" && !state.errors && (
-              <p className="text-xs text-destructive">{state.message}</p>
-            )}
-            {state.status === "success" && (
-              <p className="text-xs text-muted-foreground">{state.message}</p>
-            )}
-          </div>
-        </form>
+            <div className="flex items-center gap-3 pt-2">
+              <Button type="submit" disabled={isPending}>
+                {isPending ? "Creating…" : "Create plan"}
+              </Button>
+              {state.status === "error" && !state.errors && (
+                <p className="text-xs text-destructive">{state.message}</p>
+              )}
+              {state.status === "success" && (
+                <p className="text-xs text-muted-foreground">{state.message}</p>
+              )}
+            </div>
+          </form>
+        </div>
       </div>
 
-      {taskPanelOpen && (
-        <TaskEditorPanel
-          key={editorKey}
-          draft={draft}
-          errors={errors}
-          onChange={(patch) => setDraft((prev) => ({ ...prev, ...patch }))}
-          onClose={handleClosePanel}
-        />
-      )}
+      {/* Right task panel — slides in from the right */}
+      <div
+        className={cn(
+          "shrink-0 overflow-hidden transition-[width] duration-300 ease-out",
+          panelEntered ? "w-1/2" : "w-0",
+        )}
+      >
+        <div
+          className={cn(
+            "h-full w-[50vw] max-w-full transition-transform duration-300 ease-out",
+            panelEntered ? "translate-x-0" : "translate-x-full",
+          )}
+        >
+          {panelMounted && (
+            <TaskEditorPanel
+              key={editorKey}
+              draft={draft}
+              errors={errors}
+              onChange={(patch) => setDraft((prev) => ({ ...prev, ...patch }))}
+              onClose={handleClosePanel}
+            />
+          )}
+        </div>
+      </div>
     </div>
   );
 }
