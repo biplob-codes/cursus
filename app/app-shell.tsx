@@ -9,11 +9,11 @@ function AppShellInner({ children }: { children: ReactNode }) {
   const { sidebarHidden, taskPanelOpen } = useAppChrome();
 
   return (
-    <div className="flex min-h-screen bg-background">
+    <div className="flex h-svh overflow-hidden bg-background">
       {!sidebarHidden && <Sidebar />}
       <main
         className={cn(
-          "flex-1 bg-background transition-[padding] duration-200",
+          "app-scroll flex-1 overflow-y-auto bg-background transition-[padding] duration-200",
           taskPanelOpen
             ? "px-0 py-0"
             : sidebarHidden
