@@ -2,6 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { headers } from "next/headers";
+import { redirect } from "next/navigation";
 import { ActionState } from "./action-state";
 import { createPlanWithTasksSchema } from "@/schema/plan";
 import { prisma } from "@/lib/prisma";
@@ -63,6 +64,5 @@ export async function createPlanWithTasks(
   }
 
   revalidatePath("/plans");
-
-  return { status: "success", message: "Plan created" };
+  redirect("/plans");
 }
