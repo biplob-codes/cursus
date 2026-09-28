@@ -4,10 +4,12 @@ import {
   createContext,
   useCallback,
   useContext,
+  useEffect,
   useMemo,
   useState,
   type ReactNode,
 } from "react";
+import { usePathname } from "next/navigation";
 
 type AppChromeContextValue = {
   /** When true, the left workspace sidebar is fully hidden. */
@@ -25,8 +27,16 @@ type AppChromeContextValue = {
 const AppChromeContext = createContext<AppChromeContextValue | null>(null);
 
 export function AppChromeProvider({ children }: { children: ReactNode }) {
+  const pathname = usePathname();
   const [sidebarHidden, setSidebarHidden] = useState(false);
   const [taskPanelOpen, setTaskPanelOpen] = useState(false);
+
+  // Soft navigations (e.g. redirect after create) keep this provider mounted.
+  // Reset chrome whenever the route changes so the sidebar always comes back.
+  useEffect(() => {
+    setTaskPanelOpen(false);
+    setSidebarHidden(false);
+  }, [pathname]);
 
   const openTaskPanel = useCallback(() => {
     setTaskPanelOpen(true);
