@@ -1,6 +1,7 @@
 "use client";
 
 import { DailyPlansIcon } from "@/icons/daily-plans";
+import { NotesIcon } from "@/icons/notes";
 import { cn } from "@/lib/utils";
 import { useSession } from "@/lib/auth-client";
 import Link from "next/link";
@@ -8,6 +9,7 @@ import { usePathname } from "next/navigation";
 
 const navItems = [
   { label: "Daily plans", href: "/plans", icon: DailyPlansIcon },
+  { label: "Notes", href: "/notes", icon: NotesIcon },
 ];
 
 function UserAvatar({
@@ -59,7 +61,8 @@ export default function Sidebar() {
         <div className="space-y-0.5">
           {navItems.map((item) => {
             const Icon = item.icon;
-            const isActive = pathname === item.href;
+            const isActive =
+              pathname === item.href || pathname.startsWith(`${item.href}/`);
             return (
               <Link
                 key={item.href}
