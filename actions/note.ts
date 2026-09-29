@@ -218,3 +218,75 @@ export async function updateNote(
   revalidatePath(`/notes/${id}`);
   redirect(`/notes/${id}`);
 }
+function generateShareToken() {
+  // 24-char URL-safe token
+  const bytes = new Uint8Array(18);
+  crypto.getRandomValues(bytes);
+  return Buffer.from(bytes).toString("base64url");
+}
+
+export async function enableNoteShare(
+  noteId: string,
+): Promise<
+  | { status: "success"; shareToken: string }
+  | { status: "error"; message: string }
+> {
+  const session = await auth.api.getSession({ headers: await headers() });
+  if (!session?.user?.id) {
+    return { status: "error", message: "You must be signed in." };
+  }
+
+  const note = await prisma.note.findFirst({
+    where: { id: noteId, userId: session.user.id },
+    select: { id: true, shareToken: true },
+  });
+
+  if (!note) {
+    return { status: "error", message: "Note not found." };
+  }
+
+  const shareToken = note.shareToken ?? generateShareToken();
+
+  await prisma.note.update({
+    where: { id: note.id },
+    data: {
+      isPublic: true,
+      shareToken,
+    },
+  });
+
+  revalidatePath(`/notes/${noteId}`);
+  revalidatePath(`/share/notes/${shareToken}`);
+
+  return { status: "success", shareToken };
+}
+
+export async function disableNoteShare(
+  noteId: string,
+): Promise<{ status: "success" } | { status: "error"; message: string }> {
+  const session = await auth.api.getSession({ headers: await headers() });
+  if (!session?.user?.id) {
+    return { status: "error", message: "You must be signed in." };
+  }
+
+  const note = await prisma.note.findFirst({
+    where: { id: noteId, userId: session.user.id },
+    select: { id: true, shareToken: true },
+  });
+
+  if (!note) {
+    return { status: "error", message: "Note not found." };
+  }
+
+  await prisma.note.update({
+    where: { id: note.id },
+    data: { isPublic: false },
+  });
+
+  revalidatePath(`/notes/${noteId}`);
+  if (note.shareToken) {
+    revalidatePath(`/share/notes/${note.shareToken}`);
+  }
+
+  return { status: "success" };
+}

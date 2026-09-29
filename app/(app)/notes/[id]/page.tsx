@@ -5,6 +5,7 @@ import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { format } from "date-fns";
 import { ArrowLeft } from "lucide-react";
+import { ShareControls } from "./share-controls";
 
 type Props = {
   params: Promise<{ id: string }>;
@@ -73,6 +74,14 @@ export default async function NotePage({ params }: Props) {
           ))}
         </div>
       )}
+
+      <div className="mt-6">
+        <ShareControls
+          noteId={note.id}
+          isPublic={note.isPublic}
+          shareToken={note.shareToken}
+        />
+      </div>
 
       {note.description ? (
         <div
