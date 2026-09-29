@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { X, Plus } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -14,6 +14,10 @@ type Props = {
   onNewNamesChange: (names: string[]) => void;
 };
 
+type HighlightItem =
+  | { kind: "existing"; tag: TagOption }
+  | { kind: "create"; name: string };
+
 export function NoteTagPicker({
   existingTags,
   selectedIds,
@@ -22,6 +26,10 @@ export function NoteTagPicker({
   onNewNamesChange,
 }: Props) {
   const [query, setQuery] = useState("");
+  const [open, setOpen] = useState(false);
+  const [highlightIndex, setHighlightIndex] = useState(0);
+  const inputRef = useRef<HTMLInputElement>(null);
+  const listRef = useRef<HTMLUListElement>(null);
 
   const selectedExisting = useMemo(
     () => existingTags.filter((t) => selectedIds.includes(t.id)),
@@ -45,14 +53,44 @@ export function NoteTagPicker({
     !existingTags.some((t) => t.name.toLowerCase() === queryLower) &&
     !newNames.some((n) => n.toLowerCase() === queryLower);
 
+  const items: HighlightItem[] = useMemo(() => {
+    const list: HighlightItem[] = suggestions.map((tag) => ({
+      kind: "existing" as const,
+      tag,
+    }));
+    if (canCreate) {
+      list.push({ kind: "create", name: normalizedQuery });
+    }
+    return list;
+  }, [suggestions, canCreate, normalizedQuery]);
+
+  const showMenu = open && items.length > 0;
+
+  // Keep highlight in range when the list changes
+  useEffect(() => {
+    setHighlightIndex(0);
+  }, [query]);
+
+  useEffect(() => {
+    if (!showMenu || !listRef.current) return;
+    const el = listRef.current.querySelector<HTMLElement>(
+      `[data-index="${highlightIndex}"]`,
+    );
+    el?.scrollIntoView({ block: "nearest" });
+  }, [highlightIndex, showMenu]);
+
   function addExisting(tag: TagOption) {
     onSelectedIdsChange([...selectedIds, tag.id]);
     setQuery("");
+    setOpen(false);
+    inputRef.current?.focus();
   }
 
   function addNew(name: string) {
     onNewNamesChange([...newNames, name.trim()]);
     setQuery("");
+    setOpen(false);
+    inputRef.current?.focus();
   }
 
   function removeExisting(id: string) {
@@ -63,17 +101,48 @@ export function NoteTagPicker({
     onNewNamesChange(newNames.filter((n) => n !== name));
   }
 
+  function selectHighlighted() {
+    const item = items[highlightIndex];
+    if (!item) return;
+    if (item.kind === "existing") addExisting(item.tag);
+    else addNew(item.name);
+  }
+
   function handleKeyDown(e: React.KeyboardEvent<HTMLInputElement>) {
+    if (e.key === "ArrowDown") {
+      if (!showMenu) {
+        setOpen(true);
+        return;
+      }
+      e.preventDefault();
+      setHighlightIndex((i) => (i + 1) % items.length);
+      return;
+    }
+
+    if (e.key === "ArrowUp") {
+      if (!showMenu) return;
+      e.preventDefault();
+      setHighlightIndex((i) => (i - 1 + items.length) % items.length);
+      return;
+    }
+
     if (e.key === "Enter") {
       e.preventDefault();
-      if (suggestions.length === 1) {
-        addExisting(suggestions[0]);
+      if (showMenu && items.length > 0) {
+        selectHighlighted();
         return;
       }
       if (canCreate) {
         addNew(normalizedQuery);
       }
+      return;
     }
+
+    if (e.key === "Escape") {
+      setOpen(false);
+      return;
+    }
+
     if (e.key === "Backspace" && query === "") {
       if (newNames.length > 0) {
         removeNew(newNames[newNames.length - 1]);
@@ -84,19 +153,12 @@ export function NoteTagPicker({
   }
 
   return (
-    <div className="space-y-2">
-      <label className="text-sm font-medium text-foreground">Tags</label>
-
-      <div
-        className={cn(
-          "flex min-h-9 flex-wrap items-center gap-1.5 rounded-lg border border-border bg-transparent px-2 py-1.5",
-          "focus-within:border-ring focus-within:ring-3 focus-within:ring-ring/50",
-        )}
-      >
+    <div className="relative space-y-1">
+      <div className="flex flex-wrap items-center gap-2">
         {selectedExisting.map((tag) => (
           <span
             key={tag.id}
-            className="inline-flex items-center gap-1 rounded-md bg-muted px-1.5 py-0.5 text-xs text-foreground"
+            className="inline-flex h-7 items-center gap-1.5 rounded-md bg-muted px-2 text-[13px] text-foreground"
           >
             {tag.name}
             <button
@@ -105,7 +167,7 @@ export function NoteTagPicker({
               className="rounded p-0.5 text-muted-foreground hover:text-foreground"
               aria-label={`Remove ${tag.name}`}
             >
-              <X className="h-3 w-3" />
+              <X className="h-3.5 w-3.5" />
             </button>
           </span>
         ))}
@@ -113,7 +175,7 @@ export function NoteTagPicker({
         {newNames.map((name) => (
           <span
             key={`new-${name}`}
-            className="inline-flex items-center gap-1 rounded-md bg-primary/10 px-1.5 py-0.5 text-xs text-primary"
+            className="inline-flex h-7 items-center gap-1.5 rounded-md bg-primary/10 px-2 text-[13px] text-primary"
           >
             {name}
             <button
@@ -122,48 +184,83 @@ export function NoteTagPicker({
               className="rounded p-0.5 text-primary/70 hover:text-primary"
               aria-label={`Remove ${name}`}
             >
-              <X className="h-3 w-3" />
+              <X className="h-3.5 w-3.5" />
             </button>
           </span>
         ))}
 
         <input
+          ref={inputRef}
           type="text"
           value={query}
-          onChange={(e) => setQuery(e.target.value)}
+          onChange={(e) => {
+            setQuery(e.target.value);
+            setOpen(true);
+          }}
+          onFocus={() => setOpen(true)}
+          onBlur={() => {
+            // Delay so mousedown on a suggestion still registers
+            setTimeout(() => setOpen(false), 150);
+          }}
           onKeyDown={handleKeyDown}
           placeholder={
-            selectedExisting.length + newNames.length === 0 ? "Add a tag…" : ""
+            selectedExisting.length + newNames.length === 0
+              ? "Add a tag…"
+              : "Add another…"
           }
-          className="min-w-[8rem] flex-1 bg-transparent text-sm outline-none placeholder:text-muted-foreground/50"
+          className="min-w-[7rem] flex-1 bg-transparent py-1 text-sm text-foreground outline-none placeholder:text-muted-foreground/40"
         />
       </div>
 
-      {(suggestions.length > 0 || canCreate) && normalizedQuery && (
-        <ul className="overflow-hidden rounded-lg border border-border bg-popover shadow-sm">
-          {suggestions.map((tag) => (
-            <li key={tag.id}>
-              <button
-                type="button"
-                onClick={() => addExisting(tag)}
-                className="flex w-full items-center px-3 py-1.5 text-left text-sm text-foreground hover:bg-muted"
-              >
-                {tag.name}
-              </button>
-            </li>
-          ))}
-          {canCreate && (
-            <li>
-              <button
-                type="button"
-                onClick={() => addNew(normalizedQuery)}
-                className="flex w-full items-center gap-2 px-3 py-1.5 text-left text-sm text-foreground hover:bg-muted"
-              >
-                <Plus className="h-3.5 w-3.5 text-muted-foreground" />
-                Create “{normalizedQuery}”
-              </button>
-            </li>
-          )}
+      {showMenu && (
+        <ul
+          ref={listRef}
+          role="listbox"
+          className="absolute left-0 z-20 mt-1 max-h-48 w-full min-w-[12rem] overflow-y-auto rounded-md border border-border bg-popover py-1 shadow-md"
+        >
+          {items.map((item, index) => {
+            const isActive = index === highlightIndex;
+            if (item.kind === "existing") {
+              return (
+                <li key={item.tag.id} data-index={index} role="option">
+                  <button
+                    type="button"
+                    onMouseDown={(e) => e.preventDefault()}
+                    onMouseEnter={() => setHighlightIndex(index)}
+                    onClick={() => addExisting(item.tag)}
+                    className={cn(
+                      "flex w-full items-center px-2.5 py-1.5 text-left text-sm",
+                      isActive
+                        ? "bg-muted text-foreground"
+                        : "text-foreground hover:bg-muted",
+                    )}
+                  >
+                    {item.tag.name}
+                  </button>
+                </li>
+              );
+            }
+
+            return (
+              <li key={`create-${item.name}`} data-index={index} role="option">
+                <button
+                  type="button"
+                  onMouseDown={(e) => e.preventDefault()}
+                  onMouseEnter={() => setHighlightIndex(index)}
+                  onClick={() => addNew(item.name)}
+                  className={cn(
+                    "flex w-full items-center gap-2 px-2.5 py-1.5 text-left text-sm",
+                    isActive
+                      ? "bg-muted text-foreground"
+                      : "text-foreground hover:bg-muted",
+                  )}
+                >
+                  <Plus className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
+                  Create “{item.name}”
+                </button>
+              </li>
+            );
+          })}
         </ul>
       )}
     </div>

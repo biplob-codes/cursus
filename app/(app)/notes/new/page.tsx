@@ -14,9 +14,5 @@ export default async function NewNotePage() {
     select: { id: true, name: true },
   });
 
-  return (
-    <div className="mx-auto w-full max-w-2xl">
-      <CreateNoteForm existingTags={tags} />
-    </div>
-  );
+  return <CreateNoteForm existingTags={tags} />;
 }

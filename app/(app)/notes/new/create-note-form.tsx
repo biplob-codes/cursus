@@ -22,33 +22,24 @@ export function CreateNoteForm({
   );
 
   return (
-    <form action={formAction} className="space-y-8">
-      <div>
-        <h1 className="text-2xl font-semibold tracking-tight text-foreground">
-          New note
-        </h1>
-        <p className="mt-1 text-sm text-muted-foreground">
-          Write something down and tag it so you can find it later.
-        </p>
-      </div>
-
-      {/* Title */}
-      <div className="space-y-1.5">
+    <form action={formAction} className="mx-auto w-full max-w-2xl space-y-6">
+      {/* Title — large, no chrome */}
+      <div className="space-y-1">
         <input
           name="title"
           value={title}
           onChange={(e) => setTitle(e.target.value)}
           placeholder="Untitled"
           autoFocus
-          className="w-full bg-transparent text-2xl font-semibold tracking-tight text-foreground outline-none placeholder:text-muted-foreground/40"
+          className="w-full bg-transparent text-3xl font-semibold tracking-tight text-foreground outline-none placeholder:text-muted-foreground/35"
         />
         {state.errors?.title && (
           <p className="text-xs text-destructive">{state.errors.title[0]}</p>
         )}
       </div>
 
-      {/* Tags */}
-      <div className="space-y-1.5">
+      {/* Tags — inline, Notion-style */}
+      <div className="space-y-1">
         <NoteTagPicker
           existingTags={existingTags}
           selectedIds={selectedIds}
@@ -66,18 +57,13 @@ export function CreateNoteForm({
         )}
       </div>
 
-      {/* Description */}
-      <div className="space-y-1.5">
-        <label className="text-sm font-medium text-foreground">
-          Description
-        </label>
-        <div className="rounded-lg border border-border px-3 py-2">
-          <TaskDescriptionEditor
-            value={description}
-            onChange={setDescription}
-            placeholder="Start writing…"
-          />
-        </div>
+      {/* Description — no border, same editor */}
+      <div className="space-y-1">
+        <TaskDescriptionEditor
+          value={description}
+          onChange={setDescription}
+          placeholder="Start writing…"
+        />
         {state.errors?.description && (
           <p className="text-xs text-destructive">
             {state.errors.description[0]}
@@ -85,7 +71,6 @@ export function CreateNoteForm({
         )}
       </div>
 
-      {/* Hidden fields for the server action */}
       <input type="hidden" name="description" value={description} />
       <input type="hidden" name="tagIds" value={JSON.stringify(selectedIds)} />
       <input
@@ -94,7 +79,7 @@ export function CreateNoteForm({
         value={JSON.stringify(newNames)}
       />
 
-      <div className="flex items-center gap-3">
+      <div className="flex items-center gap-3 pt-2">
         <Button type="submit" disabled={isPending || !title.trim()}>
           {isPending ? "Creating…" : "Create note"}
         </Button>
