@@ -1,8 +1,10 @@
+import { headers } from "next/headers";
+import { notFound, redirect } from "next/navigation";
+import Link from "next/link";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { format } from "date-fns";
-import { headers } from "next/headers";
-import { notFound, redirect } from "next/navigation";
+import { ArrowLeft } from "lucide-react";
 
 type Props = {
   params: Promise<{ id: string }>;
@@ -32,12 +34,26 @@ export default async function NotePage({ params }: Props) {
 
   return (
     <article className="mx-auto w-full max-w-2xl">
-      {/* Title */}
+      <div className="mb-8 flex items-center justify-between gap-4">
+        <Link
+          href="/notes"
+          className="inline-flex items-center gap-1.5 text-sm text-muted-foreground transition-colors hover:text-foreground"
+        >
+          <ArrowLeft className="h-3.5 w-3.5" strokeWidth={1.8} />
+          Notes
+        </Link>
+        <Link
+          href={`/notes/${note.id}/edit`}
+          className="text-sm text-muted-foreground transition-colors hover:text-foreground"
+        >
+          Edit
+        </Link>
+      </div>
+
       <h1 className="text-3xl font-semibold tracking-tight text-foreground">
         {note.title}
       </h1>
 
-      {/* Meta */}
       <p className="mt-2 text-sm text-muted-foreground">
         Updated {format(note.updatedAt, "d MMM yyyy")}
         {note.createdAt.getTime() !== note.updatedAt.getTime() && (
@@ -45,7 +61,6 @@ export default async function NotePage({ params }: Props) {
         )}
       </p>
 
-      {/* Tags */}
       {tags.length > 0 && (
         <div className="mt-4 flex flex-wrap gap-2">
           {tags.map((tag) => (
@@ -59,7 +74,6 @@ export default async function NotePage({ params }: Props) {
         </div>
       )}
 
-      {/* Body — paper-like, no box */}
       {note.description ? (
         <div
           className="prose prose-sm dark:prose-invert mt-10 max-w-none text-foreground

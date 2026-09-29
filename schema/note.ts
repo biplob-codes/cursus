@@ -30,10 +30,14 @@ export const createNoteSchema = z.object({
     .transform((value) =>
       value === "" || value === undefined ? undefined : value,
     ),
-  /** Existing tag ids owned by the user */
   tagIds: z.array(z.string().uuid()).default([]),
-  /** New tag names to create and attach */
   newTagNames: z.array(tagNameSchema).default([]),
 });
 
 export type CreateNoteInput = z.infer<typeof createNoteSchema>;
+
+export const updateNoteSchema = createNoteSchema.extend({
+  id: z.string().uuid(),
+});
+
+export type UpdateNoteInput = z.infer<typeof updateNoteSchema>;
