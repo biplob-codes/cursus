@@ -6,23 +6,58 @@ import { redirect } from "next/navigation";
 import { auth } from "@/lib/auth";
 import { formatDistanceToNowStrict } from "date-fns";
 import { cn } from "@/lib/utils";
+import { NotesFilters } from "./notes-filters";
+import type { Prisma } from "@/generated/prisma/client";
 
-export default async function NotesPage() {
+type NotesPageProps = {
+  searchParams: Promise<{ q?: string; tags?: string }>;
+};
+
+export default async function NotesPage({ searchParams }: NotesPageProps) {
   const session = await auth.api.getSession({ headers: await headers() });
   if (!session?.user?.id) redirect("/signin");
 
-  const notes = await prisma.note.findMany({
-    where: { userId: session.user.id },
-    orderBy: { updatedAt: "desc" },
-    include: {
-      tags: {
-        include: { tag: true },
+  const userId = session.user.id;
+  const params = await searchParams;
+  const query = (params.q ?? "").trim();
+  const selectedTagIds = (params.tags ?? "")
+    .split(",")
+    .map((id) => id.trim())
+    .filter(Boolean);
+
+  const where: Prisma.NoteWhereInput = {
+    userId,
+    ...(query ? { title: { contains: query, mode: "insensitive" } } : {}),
+    ...(selectedTagIds.length > 0
+      ? {
+          AND: selectedTagIds.map((tagId) => ({
+            tags: { some: { tagId } },
+          })),
+        }
+      : {}),
+  };
+
+  const [notes, tags] = await Promise.all([
+    prisma.note.findMany({
+      where,
+      orderBy: { updatedAt: "desc" },
+      include: {
+        tags: {
+          include: { tag: true },
+        },
       },
-    },
-  });
+    }),
+    prisma.tag.findMany({
+      where: { userId },
+      orderBy: { name: "asc" },
+      select: { id: true, name: true },
+    }),
+  ]);
+
+  const hasFilters = query.length > 0 || selectedTagIds.length > 0;
 
   return (
-    <div className="mx-auto w-full max-w-4xl space-y-10">
+    <div className="mx-auto w-full max-w-4xl space-y-8">
       <div className="flex items-center justify-between gap-4">
         <h1 className="text-2xl font-semibold tracking-tight text-foreground">
           Notes
@@ -32,20 +67,28 @@ export default async function NotesPage() {
         </Button>
       </div>
 
+      <NotesFilters tags={tags} selectedTagIds={selectedTagIds} query={query} />
+
       {notes.length === 0 ? (
         <p className="px-2 text-sm text-muted-foreground">
-          No notes yet.{" "}
-          <Link
-            href="/notes/new"
-            className="text-foreground underline-offset-4 hover:underline"
-          >
-            Create one
-          </Link>
+          {hasFilters ? (
+            <>No notes match these filters.</>
+          ) : (
+            <>
+              No notes yet.{" "}
+              <Link
+                href="/notes/new"
+                className="text-foreground underline-offset-4 hover:underline"
+              >
+                Create one
+              </Link>
+            </>
+          )}
         </p>
       ) : (
         <ul className="divide-y divide-border/70">
           {notes.map((note) => {
-            const tags = note.tags.map((nt) => nt.tag);
+            const noteTags = note.tags.map((nt) => nt.tag);
             return (
               <li key={note.id}>
                 <Link
@@ -65,9 +108,9 @@ export default async function NotesPage() {
                       })}
                     </span>
                   </div>
-                  {tags.length > 0 && (
+                  {noteTags.length > 0 && (
                     <div className="flex flex-wrap gap-1.5">
-                      {tags.map((tag) => (
+                      {noteTags.map((tag) => (
                         <span
                           key={tag.id}
                           className="inline-flex items-center rounded-md bg-muted px-1.5 py-0.5 text-[11px] text-muted-foreground"
