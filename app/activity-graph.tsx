@@ -1,5 +1,5 @@
 import { format, parseISO, getDay } from "date-fns";
-import { cn } from "cn";
+import { cn } from "@/lib/utils";
 import { LEVEL_LABEL } from "@/lib/activity";
 import type { DayActivity, ActivityLevel } from "@/lib/activity";
 
@@ -60,64 +60,62 @@ export function ActivityGraph({ data, className }: ActivityGraphProps) {
 
   return (
     <div className={cn("space-y-2", className)}>
-      <p className="text-foreground my-2">
+      <p className="my-2 text-foreground">
         <span className="font-semibold">{totalDone}</span>{" "}
         {totalDone === 1 ? "task" : "tasks"} completed in the last {data.length}{" "}
         days
       </p>
 
       <div className="space-y-3 rounded-lg border border-border p-4">
-        <div className="overflow-x-auto">
-          <div
-            className="grid gap-0.75"
-            style={{
-              gridTemplateColumns: `auto repeat(${weekCount}, minmax(0, 1fr))`,
-              minWidth: `${weekCount * 13 + 32}px`,
-            }}
-          >
-            {/* Month labels (row 1) */}
-            {monthLabels.map(({ col, label }) => (
-              <div
-                key={`${label}-${col}`}
-                className="whitespace-nowrap pb-1 text-xs leading-none text-foreground"
-                style={{ gridColumn: col, gridRow: 1 }}
-              >
-                {label}
-              </div>
-            ))}
+        {/* Full year fits the container — no horizontal scroll (GitHub-style). */}
+        <div
+          className="grid w-full gap-[3px]"
+          style={{
+            gridTemplateColumns: `auto repeat(${weekCount}, minmax(0, 1fr))`,
+          }}
+        >
+          {/* Month labels (row 1) */}
+          {monthLabels.map(({ col, label }) => (
+            <div
+              key={`${label}-${col}`}
+              className="whitespace-nowrap pb-1 text-xs leading-none text-foreground"
+              style={{ gridColumn: col, gridRow: 1 }}
+            >
+              {label}
+            </div>
+          ))}
 
-            {/* Weekday labels (column 1) */}
-            {WEEKDAY_LABELS.map((label, i) => (
-              <div
-                key={i}
-                className="flex items-center pr-2 text-xs leading-none text-foreground"
-                style={{ gridColumn: 1, gridRow: i + 2 }}
-              >
-                {label}
-              </div>
-            ))}
+          {/* Weekday labels (column 1) */}
+          {WEEKDAY_LABELS.map((label, i) => (
+            <div
+              key={i}
+              className="flex items-center pr-1.5 text-[10px] leading-none text-muted-foreground sm:pr-2 sm:text-xs sm:text-foreground"
+              style={{ gridColumn: 1, gridRow: i + 2 }}
+            >
+              {label}
+            </div>
+          ))}
 
-            {/* Day cells */}
-            {positioned.map(({ day, col, row }) => (
-              <div
-                key={day.date}
-                title={dayTitle(day)}
-                className={cn(
-                  "aspect-square w-full rounded-[3px]",
-                  LEVEL_CLASS[day.level],
-                )}
-                style={{ gridColumn: col, gridRow: row }}
-              />
-            ))}
-          </div>
+          {/* Day cells — square via aspect-ratio, shrink with column width */}
+          {positioned.map(({ day, col, row }) => (
+            <div
+              key={day.date}
+              title={dayTitle(day)}
+              className={cn(
+                "aspect-square w-full min-w-0 rounded-[2px]",
+                LEVEL_CLASS[day.level],
+              )}
+              style={{ gridColumn: col, gridRow: row }}
+            />
+          ))}
         </div>
 
-        {/* Legend, under the grid */}
+        {/* Legend */}
         <div className="flex flex-wrap items-center justify-end gap-x-4 gap-y-1.5 text-[11px] text-muted-foreground">
           {LEVELS.map((level) => (
             <div key={level} className="flex items-center gap-1.5">
               <div
-                className={cn("size-[11px] rounded-[3px]", LEVEL_CLASS[level])}
+                className={cn("size-2.75 rounded-[3px]", LEVEL_CLASS[level])}
               />
               <span>{LEVEL_LABEL[level]}</span>
             </div>

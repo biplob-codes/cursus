@@ -1,19 +1,11 @@
-// components/todays-plan.tsx
 import Link from "next/link";
-import { format } from "date-fns";
 import type { Plan, Task } from "@/generated/prisma/client";
 import { formatDateOnly } from "@/lib/date";
+import { planProgress } from "@/lib/plan";
 
 type PlanWithTasks = Plan & { tasks: Task[] };
 
-function planProgress(tasks: Task[]) {
-  const total = tasks.length;
-  const done = tasks.filter((t) => t.status === "DONE").length;
-  const progress = total === 0 ? 0 : Math.round((done / total) * 100);
-  return { total, done, progress };
-}
-
-export function TodaysPlan({ plan }: { plan: Plan & { tasks: Task[] } }) {
+export function TodaysPlan({ plan }: { plan: PlanWithTasks }) {
   const { total, done, progress } = planProgress(plan.tasks);
 
   return (
