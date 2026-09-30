@@ -1,5 +1,11 @@
 // lib/date.ts
-import { differenceInCalendarDays, format } from "date-fns";
+import {
+  differenceInCalendarDays,
+  format,
+  startOfDay,
+  formatDistanceToNowStrict,
+  differenceInDays,
+} from "date-fns";
 
 /**
  * Plan.date is @db.Date — a calendar day, not a moment in time.
@@ -35,21 +41,25 @@ export function formatDateOnly(date: Date, pattern = "d MMMM yyyy"): string {
   return format(local, pattern);
 }
 
-/** today / tomorrow / yesterday relative to local calendar day. */
 export function getRelativeDayLabel(date: Date) {
-  const planDay = new Date(
-    date.getUTCFullYear(),
-    date.getUTCMonth(),
-    date.getUTCDate(),
+  const diff = differenceInCalendarDays(
+    startOfDay(date),
+    startOfDay(new Date()),
   );
-  const today = new Date(
-    new Date().getFullYear(),
-    new Date().getMonth(),
-    new Date().getDate(),
-  );
-  const diff = differenceInCalendarDays(planDay, today);
   if (diff === 0) return "today";
   if (diff === 1) return "tomorrow";
   if (diff === -1) return "yesterday";
-  return format(planDay, "EEEE");
+  return format(date, "EEEE");
+}
+
+/**
+ * Within the last 7 days → relative ("3 days ago").
+ * Older → absolute calendar date ("23 Sep 2025").
+ */
+export function formatUpdatedAt(date: Date): string {
+  const days = differenceInDays(new Date(), date);
+  if (days < 7) {
+    return formatDistanceToNowStrict(date, { addSuffix: true });
+  }
+  return format(date, "d MMM yyyy");
 }

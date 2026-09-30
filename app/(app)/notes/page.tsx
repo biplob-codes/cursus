@@ -1,12 +1,12 @@
 // app/(app)/notes/page.tsx
 import { prisma } from "@/lib/prisma";
-import { Button } from "@/ui/button";
 import Link from "next/link";
-import { formatDistanceToNowStrict } from "date-fns";
 import { cn } from "@/lib/utils";
 import { requireUser } from "@/lib/session";
-import { NotesToolbar } from "./notes-toolbar";
+import { formatUpdatedAt } from "@/lib/date";
+
 import type { Prisma } from "@/generated/prisma/client";
+import { NotesToolbar } from "./notes-toolbar";
 
 type NotesPageProps = {
   searchParams: Promise<{ q?: string; tags?: string }>;
@@ -39,10 +39,11 @@ export default async function NotesPage({ searchParams }: NotesPageProps) {
     prisma.note.findMany({
       where,
       orderBy: { updatedAt: "desc" },
-      include: {
-        tags: {
-          include: { tag: true },
-        },
+      select: {
+        id: true,
+        title: true,
+        isPublic: true,
+        updatedAt: true,
       },
     }),
     prisma.tag.findMany({
@@ -76,43 +77,36 @@ export default async function NotesPage({ searchParams }: NotesPageProps) {
         </p>
       ) : (
         <ul className="divide-y divide-border/70">
-          {notes.map((note) => {
-            const noteTags = note.tags.map((nt) => nt.tag);
-            return (
-              <li key={note.id}>
-                <Link
-                  href={`/notes/${note.id}`}
+          {notes.map((note) => (
+            <li key={note.id}>
+              <Link
+                href={`/notes/${note.id}`}
+                className={cn(
+                  "flex items-center gap-3 rounded-md px-2 py-3 transition-colors",
+                  "hover:bg-muted/50",
+                )}
+              >
+                <span className="min-w-0 flex-1 truncate text-sm font-medium text-foreground">
+                  {note.title}
+                </span>
+
+                <span
                   className={cn(
-                    "flex flex-col gap-1.5 rounded-md px-2 py-3 transition-colors",
-                    "hover:bg-muted/50",
+                    "shrink-0 rounded-md px-1.5 py-0.5 text-[11px] font-medium",
+                    note.isPublic
+                      ? "bg-emerald-500/10 text-emerald-700 dark:text-emerald-400"
+                      : "bg-muted text-muted-foreground",
                   )}
                 >
-                  <div className="flex items-start justify-between gap-3">
-                    <span className="min-w-0 truncate font-medium text-foreground">
-                      {note.title}
-                    </span>
-                    <span className="shrink-0 text-xs tabular-nums text-muted-foreground">
-                      {formatDistanceToNowStrict(note.updatedAt, {
-                        addSuffix: true,
-                      })}
-                    </span>
-                  </div>
-                  {noteTags.length > 0 && (
-                    <div className="flex flex-wrap gap-1.5">
-                      {noteTags.map((tag) => (
-                        <span
-                          key={tag.id}
-                          className="inline-flex items-center rounded-md bg-muted px-1.5 py-0.5 text-[11px] text-muted-foreground"
-                        >
-                          {tag.name}
-                        </span>
-                      ))}
-                    </div>
-                  )}
-                </Link>
-              </li>
-            );
-          })}
+                  {note.isPublic ? "Public" : "Private"}
+                </span>
+
+                <span className="w-24 shrink-0 text-right text-xs tabular-nums text-muted-foreground">
+                  {formatUpdatedAt(note.updatedAt)}
+                </span>
+              </Link>
+            </li>
+          ))}
         </ul>
       )}
     </div>
