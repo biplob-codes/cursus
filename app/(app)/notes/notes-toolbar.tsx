@@ -11,6 +11,8 @@ import { cn } from "@/lib/utils";
 
 export type TagOption = { id: string; name: string };
 
+const SEARCH_DEBOUNCE_MS = 300;
+
 type NotesToolbarProps = {
   tags: TagOption[];
   selectedTagIds: string[];
@@ -30,6 +32,7 @@ export function NotesToolbar({
   const [searchOpen, setSearchOpen] = useState(query.length > 0);
   const [searchValue, setSearchValue] = useState(query);
   const inputRef = useRef<HTMLInputElement>(null);
+  const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
     setSearchValue(query);
@@ -39,6 +42,12 @@ export function NotesToolbar({
   useEffect(() => {
     if (searchOpen) inputRef.current?.focus();
   }, [searchOpen]);
+
+  useEffect(() => {
+    return () => {
+      if (debounceRef.current) clearTimeout(debounceRef.current);
+    };
+  }, []);
 
   const updateParams = useCallback(
     (patch: { q?: string; tags?: string[] }) => {
@@ -68,22 +77,36 @@ export function NotesToolbar({
   }
 
   function closeSearch() {
-    setSearchOpen(false);
-    if (searchValue.trim()) {
-      setSearchValue("");
-      updateParams({ q: "" });
+    if (debounceRef.current) {
+      clearTimeout(debounceRef.current);
+      debounceRef.current = null;
     }
+    setSearchOpen(false);
+    setSearchValue("");
+    if (query.length > 0) updateParams({ q: "" });
   }
 
   function handleSearchChange(value: string) {
     setSearchValue(value);
-    updateParams({ q: value });
+    if (debounceRef.current) clearTimeout(debounceRef.current);
+    debounceRef.current = setTimeout(() => {
+      updateParams({ q: value });
+    }, SEARCH_DEBOUNCE_MS);
   }
 
   function handleSearchKeyDown(e: React.KeyboardEvent<HTMLInputElement>) {
     if (e.key === "Escape") {
       e.preventDefault();
       closeSearch();
+    }
+    // Enter → flush debounce immediately
+    if (e.key === "Enter") {
+      e.preventDefault();
+      if (debounceRef.current) {
+        clearTimeout(debounceRef.current);
+        debounceRef.current = null;
+      }
+      updateParams({ q: searchValue });
     }
   }
 
@@ -113,7 +136,6 @@ export function NotesToolbar({
       </h1>
 
       <div className="flex min-w-0 flex-1 items-center justify-end gap-0.5">
-        {/* Inline search */}
         {searchOpen ? (
           <div className="flex min-w-0 max-w-xs flex-1 items-center gap-1 sm:max-w-sm">
             <Search
@@ -162,7 +184,6 @@ export function NotesToolbar({
           </button>
         )}
 
-        {/* Tag filter */}
         <Popover>
           <PopoverTrigger
             aria-label="Filter by tags"

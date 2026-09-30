@@ -4,9 +4,8 @@ import Link from "next/link";
 import { cn } from "@/lib/utils";
 import { requireUser } from "@/lib/session";
 import { formatUpdatedAt } from "@/lib/date";
-
-import type { Prisma } from "@/generated/prisma/client";
 import { NotesToolbar } from "./notes-toolbar";
+import type { Prisma } from "@/generated/prisma/client";
 
 type NotesPageProps = {
   searchParams: Promise<{ q?: string; tags?: string }>;
@@ -56,11 +55,18 @@ export default async function NotesPage({ searchParams }: NotesPageProps) {
   const hasFilters = query.length > 0 || selectedTagIds.length > 0;
 
   return (
-    <div className="mx-auto w-full max-w-4xl space-y-8">
-      <NotesToolbar tags={tags} selectedTagIds={selectedTagIds} query={query} />
+    <div className="mx-auto w-full max-w-4xl">
+      {/* Stays put while the list scrolls inside main */}
+      <div className="sticky top-0 z-10 -mx-2 bg-background px-2 pb-4 pt-0">
+        <NotesToolbar
+          tags={tags}
+          selectedTagIds={selectedTagIds}
+          query={query}
+        />
+      </div>
 
       {notes.length === 0 ? (
-        <p className="px-2 text-sm text-muted-foreground">
+        <p className="px-2 pt-4 text-sm text-muted-foreground">
           {hasFilters ? (
             <>No notes match these filters.</>
           ) : (
@@ -76,7 +82,7 @@ export default async function NotesPage({ searchParams }: NotesPageProps) {
           )}
         </p>
       ) : (
-        <ul className="divide-y divide-border/70">
+        <ul className="divide-y divide-border/70 my-5">
           {notes.map((note) => (
             <li key={note.id}>
               <Link
