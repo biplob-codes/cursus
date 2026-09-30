@@ -1,22 +1,23 @@
-// app/(app)/plans/activity-graph.tsx
 import { format, parseISO, getDay } from "date-fns";
 import { cn } from "cn";
+import { LEVEL_LABEL } from "@/lib/activity";
 import type { DayActivity, ActivityLevel } from "@/lib/activity";
 
 const LEVEL_CLASS: Record<ActivityLevel, string> = {
-  0: "bg-muted/80 ring-1 ring-inset ring-border/60",
-  1: "bg-emerald-200 dark:bg-emerald-950",
-  2: "bg-emerald-300 dark:bg-emerald-800",
-  3: "bg-emerald-500 dark:bg-emerald-600",
-  4: "bg-emerald-600 dark:bg-emerald-400",
+  0: "bg-muted ring-1 ring-inset ring-border",
+  1: "bg-red-500",
+  2: "bg-violet-500",
+  3: "bg-indigo-400",
+  4: "bg-green-500",
 };
 
-const WEEKDAY_LABELS = ["", "Mon", "", "Wed", "", "Fri", ""]; // sparse like GitHub
+const WEEKDAY_LABELS = ["", "Mon", "", "Wed", "", "Fri", ""];
+const LEVELS: ActivityLevel[] = [0, 1, 2, 3, 4];
 
-function levelLabel(day: DayActivity): string {
-  if (day.level === 0) return "No plan";
-  if (day.total === 0) return "Plan with no tasks";
-  return `${day.done}/${day.total} tasks done`;
+function dayTitle(day: DayActivity): string {
+  const date = format(parseISO(day.date), "MMM d, yyyy");
+  if (day.level === 0) return `${date}: No plan`;
+  return `${date}: ${day.done}/${day.total} tasks done (${day.percent}%)`;
 }
 
 type ActivityGraphProps = {
@@ -27,104 +28,101 @@ type ActivityGraphProps = {
 export function ActivityGraph({ data, className }: ActivityGraphProps) {
   if (data.length === 0) return null;
 
-  // Group into weeks (columns). Start from the weekday of the first day
-  // so the grid aligns to calendar weeks (Sun = 0 … Sat = 6).
-  const firstWeekday = getDay(parseISO(data[0].date)); // 0–6
-  const cells: (DayActivity | null)[] = [
-    ...Array.from({ length: firstWeekday }, () => null),
-    ...data,
-  ];
+  const totalDone = data.reduce((sum, d) => sum + d.done, 0);
 
-  const weeks: (DayActivity | null)[][] = [];
-  for (let i = 0; i < cells.length; i += 7) {
-    weeks.push(cells.slice(i, i + 7));
+  // Each day gets an explicit grid position: column = week, row = weekday (Sun = 0)
+  const firstWeekday = getDay(parseISO(data[0].date));
+  const weekCount = Math.ceil((firstWeekday + data.length) / 7);
+
+  const positioned = data.map((day, i) => {
+    const offset = firstWeekday + i;
+    return {
+      day,
+      col: Math.floor(offset / 7) + 2, // +1 for 1-based, +1 for label column
+      row: (offset % 7) + 2, // +1 for 1-based, +1 for month label row
+    };
+  });
+
+  // Month labels: one per month, placed at the column where the month first appears
+  const rawLabels: { col: number; label: string }[] = [];
+  let lastMonth = "";
+  for (const { day, col } of positioned) {
+    const month = format(parseISO(day.date), "MMM");
+    if (month !== lastMonth) {
+      rawLabels.push({ col, label: month });
+      lastMonth = month;
+    }
   }
 
-  // Month labels: show the month name above the first week that contains day 1
-  // of a month (or the very first cell).
-  const monthLabels: { weekIndex: number; label: string }[] = [];
-  let lastMonth = "";
-  weeks.forEach((week, weekIndex) => {
-    for (const cell of week) {
-      if (!cell) continue;
-      const month = format(parseISO(cell.date), "MMM");
-      if (month !== lastMonth) {
-        monthLabels.push({ weekIndex, label: month });
-        lastMonth = month;
-        break;
-      }
-    }
-  });
+  const monthLabels = rawLabels.filter(
+    (m, i) => i === rawLabels.length - 1 || rawLabels[i + 1].col - m.col >= 3,
+  );
 
   return (
     <div className={cn("space-y-2", className)}>
-      <div className="flex items-end gap-3 overflow-x-auto pb-1">
-        {/* Weekday labels */}
-        <div className="flex flex-col gap-[3px] pt-[18px] text-[10px] leading-none text-muted-foreground">
-          {WEEKDAY_LABELS.map((label, i) => (
-            <div key={i} className="flex h-[11px] items-center">
-              {label}
+      <p className="text-foreground my-2">
+        <span className="font-semibold">{totalDone}</span>{" "}
+        {totalDone === 1 ? "task" : "tasks"} completed in the last {data.length}{" "}
+        days
+      </p>
+
+      <div className="space-y-3 rounded-lg border border-border p-4">
+        <div className="overflow-x-auto">
+          <div
+            className="grid gap-0.75"
+            style={{
+              gridTemplateColumns: `auto repeat(${weekCount}, minmax(0, 1fr))`,
+              minWidth: `${weekCount * 13 + 32}px`,
+            }}
+          >
+            {/* Month labels (row 1) */}
+            {monthLabels.map(({ col, label }) => (
+              <div
+                key={`${label}-${col}`}
+                className="whitespace-nowrap pb-1 text-xs leading-none text-foreground"
+                style={{ gridColumn: col, gridRow: 1 }}
+              >
+                {label}
+              </div>
+            ))}
+
+            {/* Weekday labels (column 1) */}
+            {WEEKDAY_LABELS.map((label, i) => (
+              <div
+                key={i}
+                className="flex items-center pr-2 text-xs leading-none text-foreground"
+                style={{ gridColumn: 1, gridRow: i + 2 }}
+              >
+                {label}
+              </div>
+            ))}
+
+            {/* Day cells */}
+            {positioned.map(({ day, col, row }) => (
+              <div
+                key={day.date}
+                title={dayTitle(day)}
+                className={cn(
+                  "aspect-square w-full rounded-[3px]",
+                  LEVEL_CLASS[day.level],
+                )}
+                style={{ gridColumn: col, gridRow: row }}
+              />
+            ))}
+          </div>
+        </div>
+
+        {/* Legend, under the grid */}
+        <div className="flex flex-wrap items-center justify-end gap-x-4 gap-y-1.5 text-[11px] text-muted-foreground">
+          {LEVELS.map((level) => (
+            <div key={level} className="flex items-center gap-1.5">
+              <div
+                className={cn("size-[11px] rounded-[3px]", LEVEL_CLASS[level])}
+              />
+              <span>{LEVEL_LABEL[level]}</span>
             </div>
           ))}
         </div>
-
-        <div className="min-w-0 flex-1">
-          {/* Month labels */}
-          <div className="relative mb-1.5 h-3.5 text-[10px] leading-none text-muted-foreground">
-            {monthLabels.map(({ weekIndex, label }) => (
-              <span
-                key={`${label}-${weekIndex}`}
-                className="absolute"
-                style={{ left: `${weekIndex * 14}px` }} // 11px cell + 3px gap
-              >
-                {label}
-              </span>
-            ))}
-          </div>
-
-          {/* Grid */}
-          <div className="flex gap-[3px]">
-            {weeks.map((week, weekIndex) => (
-              <div key={weekIndex} className="flex flex-col gap-[3px]">
-                {week.map((day, dayIndex) => {
-                  if (!day) {
-                    return (
-                      <div
-                        key={`empty-${weekIndex}-${dayIndex}`}
-                        className="size-[11px]"
-                      />
-                    );
-                  }
-
-                  const title = `${format(parseISO(day.date), "MMM d, yyyy")}: ${levelLabel(day)}`;
-
-                  return (
-                    <div
-                      key={day.date}
-                      title={title}
-                      className={cn(
-                        "size-[11px] rounded-[2px] transition-colors",
-                        LEVEL_CLASS[day.level],
-                      )}
-                    />
-                  );
-                })}
-              </div>
-            ))}
-          </div>
-        </div>
-      </div>
-
-      {/* Legend */}
-      <div className="flex items-center justify-end gap-1.5 text-[10px] text-muted-foreground">
-        <span>Less</span>
-        {([0, 1, 2, 3, 4] as ActivityLevel[]).map((level) => (
-          <div
-            key={level}
-            className={cn("size-[11px] rounded-[2px]", LEVEL_CLASS[level])}
-          />
-        ))}
-        <span>More</span>
       </div>
     </div>
   );

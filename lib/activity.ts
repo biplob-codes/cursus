@@ -1,31 +1,42 @@
-// lib/activity.ts
 import { startOfDay, subDays, format, eachDayOfInterval } from "date-fns";
 import { prisma } from "@/lib/prisma";
-import type { Task } from "@/generated/prisma/client";
 
-/** 0 = no plan, 1 = 0% done, 2 = 1–49%, 3 = 50–99%, 4 = 100% */
+/**
+ * 0 = no plan / no tasks
+ * 1 = 0–25%
+ * 2 = 26–50%
+ * 3 = 51–75%
+ * 4 = 76–100%
+ */
 export type ActivityLevel = 0 | 1 | 2 | 3 | 4;
+
+export const LEVEL_LABEL: Record<ActivityLevel, string> = {
+  0: "No plan",
+  1: "0–25%",
+  2: "26–50%",
+  3: "51–75%",
+  4: "76–100%",
+};
 
 export type DayActivity = {
   date: string; // yyyy-MM-dd
   level: ActivityLevel;
   total: number;
   done: number;
+  percent: number; // 0–100, rounded
 };
 
-export function computeLevel(tasks: Pick<Task, "status">[]): ActivityLevel {
-  if (tasks.length === 0) return 1; // plan exists but no tasks → treat as "started"
-  const done = tasks.filter((t) => t.status === "DONE").length;
-  const ratio = done / tasks.length;
-  if (ratio === 0) return 1;
-  if (ratio < 0.5) return 2;
-  if (ratio < 1) return 3;
+// Uses the rounded percent so the level always matches what the tooltip shows
+export function levelFromPercent(percent: number): ActivityLevel {
+  if (percent <= 25) return 1;
+  if (percent <= 50) return 2;
+  if (percent <= 75) return 3;
   return 4;
 }
 
 /**
- * Returns one entry per day for the last `days` days (inclusive of today).
- * Days with no plan get level 0.
+ * One entry per day for the last `days` days (inclusive of today).
+ * Days with no plan or no tasks get level 0.
  */
 export async function getActivityData(
   userId: string,
@@ -35,41 +46,34 @@ export async function getActivityData(
   const start = subDays(end, days - 1);
 
   const plans = await prisma.plan.findMany({
-    where: {
-      userId,
-      date: { gte: start, lte: end },
-    },
+    where: { userId, date: { gte: start, lte: end } },
     select: {
       date: true,
       tasks: { select: { status: true } },
     },
   });
 
-  // key = yyyy-MM-dd → level info
-  const byDate = new Map<
-    string,
-    { total: number; done: number; level: ActivityLevel }
-  >();
+  // Sum tasks across plans that land on the same day
+  const byDate = new Map<string, { total: number; done: number }>();
   for (const plan of plans) {
     const key = format(plan.date, "yyyy-MM-dd");
-    const total = plan.tasks.length;
-    const done = plan.tasks.filter((t) => t.status === "DONE").length;
-    // if multiple plans on same day, take the higher level (or merge — here we overwrite with latest)
+    const prev = byDate.get(key) ?? { total: 0, done: 0 };
     byDate.set(key, {
-      total,
-      done,
-      level: computeLevel(plan.tasks),
+      total: prev.total + plan.tasks.length,
+      done: prev.done + plan.tasks.filter((t) => t.status === "DONE").length,
     });
   }
 
   return eachDayOfInterval({ start, end }).map((day) => {
     const key = format(day, "yyyy-MM-dd");
-    const entry = byDate.get(key);
+    const { total, done } = byDate.get(key) ?? { total: 0, done: 0 };
+    const percent = total === 0 ? 0 : Math.round((done / total) * 100);
     return {
       date: key,
-      level: entry?.level ?? 0,
-      total: entry?.total ?? 0,
-      done: entry?.done ?? 0,
+      level: total === 0 ? 0 : levelFromPercent(percent),
+      total,
+      done,
+      percent,
     };
   });
 }

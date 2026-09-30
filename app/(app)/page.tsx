@@ -20,11 +20,7 @@ export default async function HomePage() {
   return (
     <div className="mx-auto w-full max-w-4xl space-y-10">
       <TodaysPlansSection plans={todayPlans} />
-
       <section className="space-y-3">
-        <h2 className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
-          Activity
-        </h2>
         <ActivityGraph data={activity} />
       </section>
     </div>
