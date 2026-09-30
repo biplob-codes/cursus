@@ -1,6 +1,9 @@
+// components/todays-plan.tsx
 import Link from "next/link";
 import { format } from "date-fns";
-import { Plan, Task } from "@/generated/prisma/client";
+import type { Plan, Task } from "@/generated/prisma/client";
+
+type PlanWithTasks = Plan & { tasks: Task[] };
 
 function planProgress(tasks: Task[]) {
   const total = tasks.length;
@@ -9,7 +12,8 @@ function planProgress(tasks: Task[]) {
   return { total, done, progress };
 }
 
-export function TodaysPlan({ plan }: { plan: Plan & { tasks: Task[] } }) {
+/** Single plan row (used inside the Today section). */
+export function TodaysPlan({ plan }: { plan: PlanWithTasks }) {
   const { total, done, progress } = planProgress(plan.tasks);
 
   return (
@@ -34,5 +38,33 @@ export function TodaysPlan({ plan }: { plan: Plan & { tasks: Task[] } }) {
         </span>
       )}
     </Link>
+  );
+}
+
+/** Full "Today" block: heading, empty state, or list of rows. */
+export function TodaysPlansSection({ plans }: { plans: PlanWithTasks[] }) {
+  return (
+    <section className="space-y-1">
+      <h2 className="px-2 text-xs font-medium uppercase tracking-wide text-muted-foreground">
+        Today
+      </h2>
+      {plans.length === 0 ? (
+        <p className="px-2 py-2 text-sm text-muted-foreground">
+          No plan for today.{" "}
+          <Link
+            href="/plans/new"
+            className="text-foreground underline-offset-4 hover:underline"
+          >
+            Create one
+          </Link>
+        </p>
+      ) : (
+        <div className="space-y-0.5">
+          {plans.map((plan) => (
+            <TodaysPlan key={plan.id} plan={plan} />
+          ))}
+        </div>
+      )}
+    </section>
   );
 }

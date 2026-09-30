@@ -1,11 +1,10 @@
+// app/(app)/plans/page.tsx
 import { prisma } from "@/lib/prisma";
 import { Button } from "@/ui/button";
 import Link from "next/link";
 import { startOfDay } from "date-fns";
-import { headers } from "next/headers";
-import { redirect } from "next/navigation";
-import { auth } from "@/lib/auth";
-import { TodaysPlan } from "./todays-plan";
+import { requireUser } from "@/lib/session";
+import { TodaysPlansSection } from "@/components/todays-plan";
 import { PlansTable } from "./plans-table";
 import { Pagination } from "@/ui/pagination";
 
@@ -16,43 +15,30 @@ type PlansPageProps = {
 };
 
 export default async function PlansPage({ searchParams }: PlansPageProps) {
-  const session = await auth.api.getSession({ headers: await headers() });
-  if (!session?.user?.id) redirect("/signin");
+  const user = await requireUser();
+  const userId = user.id;
 
-  const userId = session.user.id;
   const params = await searchParams;
   const requestedPage = Math.max(1, Number(params.page) || 1);
 
   const today = startOfDay(new Date());
 
-  // Today's plans — always full list (typically 0–1)
   const todayPlans = await prisma.plan.findMany({
-    where: {
-      userId,
-      date: today,
-    },
+    where: { userId, date: today },
     orderBy: { date: "desc" },
     include: { tasks: true },
   });
 
-  // Total count of non-today plans (for pagination)
   const totalOtherPlans = await prisma.plan.count({
-    where: {
-      userId,
-      date: { not: today },
-    },
+    where: { userId, date: { not: today } },
   });
 
   const totalPages = Math.max(1, Math.ceil(totalOtherPlans / PAGE_SIZE));
   const page = Math.min(requestedPage, totalPages);
   const skip = (page - 1) * PAGE_SIZE;
 
-  // Only the current page of "All plans"
   const otherPlans = await prisma.plan.findMany({
-    where: {
-      userId,
-      date: { not: today },
-    },
+    where: { userId, date: { not: today } },
     orderBy: { date: "desc" },
     skip,
     take: PAGE_SIZE,
@@ -84,28 +70,7 @@ export default async function PlansPage({ searchParams }: PlansPageProps) {
         </p>
       ) : (
         <>
-          <section className="space-y-1">
-            <h2 className="px-2 text-xs font-medium uppercase tracking-wide text-muted-foreground">
-              Today
-            </h2>
-            {todayPlans.length === 0 ? (
-              <p className="px-2 py-2 text-sm text-muted-foreground">
-                No plan for today.{" "}
-                <Link
-                  href="/plans/new"
-                  className="text-foreground underline-offset-4 hover:underline"
-                >
-                  Create one
-                </Link>
-              </p>
-            ) : (
-              <div className="space-y-0.5">
-                {todayPlans.map((plan) => (
-                  <TodaysPlan key={plan.id} plan={plan} />
-                ))}
-              </div>
-            )}
-          </section>
+          <TodaysPlansSection plans={todayPlans} />
 
           <section className="space-y-1">
             <h2 className="px-2 text-xs font-medium uppercase tracking-wide text-muted-foreground">
