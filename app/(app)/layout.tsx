@@ -1,11 +1,9 @@
-import { auth } from "@/lib/auth";
-import { headers } from "next/headers";
 import Home from "../home";
 import { AppShell } from "../app-shell";
+import { getSession } from "@/lib/session";
 
 const AppLayout = async ({ children }: { children: React.ReactNode }) => {
-  const session = await auth.api.getSession({ headers: await headers() });
-
+  const session = await getSession();
   if (!session?.user) return <Home />;
   return <AppShell>{children}</AppShell>;
 };
