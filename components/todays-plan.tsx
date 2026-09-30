@@ -2,6 +2,7 @@
 import Link from "next/link";
 import { format } from "date-fns";
 import type { Plan, Task } from "@/generated/prisma/client";
+import { formatDateOnly } from "@/lib/date";
 
 type PlanWithTasks = Plan & { tasks: Task[] };
 
@@ -12,8 +13,7 @@ function planProgress(tasks: Task[]) {
   return { total, done, progress };
 }
 
-/** Single plan row (used inside the Today section). */
-export function TodaysPlan({ plan }: { plan: PlanWithTasks }) {
+export function TodaysPlan({ plan }: { plan: Plan & { tasks: Task[] } }) {
   const { total, done, progress } = planProgress(plan.tasks);
 
   return (
@@ -23,7 +23,7 @@ export function TodaysPlan({ plan }: { plan: PlanWithTasks }) {
     >
       <div className="min-w-0 flex-1">
         <p className="text-sm font-medium text-foreground">
-          {format(plan.date, "d MMMM yyyy")}
+          {formatDateOnly(plan.date)}
         </p>
         {plan.note ? (
           <p className="mt-1 whitespace-pre-wrap text-xs leading-relaxed text-muted-foreground">
@@ -41,7 +41,6 @@ export function TodaysPlan({ plan }: { plan: PlanWithTasks }) {
   );
 }
 
-/** Full "Today" block: heading, empty state, or list of rows. */
 export function TodaysPlansSection({ plans }: { plans: PlanWithTasks[] }) {
   return (
     <section className="space-y-1">

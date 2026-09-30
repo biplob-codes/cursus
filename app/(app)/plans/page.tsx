@@ -7,6 +7,7 @@ import { requireUser } from "@/lib/session";
 import { TodaysPlansSection } from "@/components/todays-plan";
 import { PlansTable } from "./plans-table";
 import { Pagination } from "@/ui/pagination";
+import { todayDateOnly } from "@/lib/date";
 
 const PAGE_SIZE = 7;
 
@@ -21,7 +22,7 @@ export default async function PlansPage({ searchParams }: PlansPageProps) {
   const params = await searchParams;
   const requestedPage = Math.max(1, Number(params.page) || 1);
 
-  const today = startOfDay(new Date());
+  const today = todayDateOnly();
 
   const todayPlans = await prisma.plan.findMany({
     where: { userId, date: today },
