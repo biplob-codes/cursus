@@ -4,6 +4,7 @@
 import { useState, useTransition } from "react";
 import { Globe, Lock } from "lucide-react";
 import { enableNoteShare, disableNoteShare } from "@/actions/note";
+import { toast } from "@/ui/sonner";
 import { cn } from "@/lib/utils";
 
 type Props = {
@@ -16,19 +17,38 @@ export function NoteVisibilityToggle({ noteId, isPublic }: Props) {
   const [isPending, startTransition] = useTransition();
 
   function toggle(e: React.MouseEvent) {
-    // Don't navigate when the row title is a link nearby
     e.preventDefault();
     e.stopPropagation();
 
     startTransition(async () => {
       if (publicState) {
         const result = await disableNoteShare(noteId);
-        if (result.status === "error") return;
+        if (result.status === "error") {
+          toast(result.message, {
+            icon: <Lock className="size-4" strokeWidth={1.8} />,
+          });
+          return;
+        }
         setPublicState(false);
+        toast("Note is now private. Only you can see it.", {
+          icon: <Lock className="size-4" strokeWidth={1.8} />,
+        });
       } else {
         const result = await enableNoteShare(noteId);
-        if (result.status === "error") return;
+        if (result.status === "error") {
+          toast(result.message, {
+            icon: <Globe className="size-4" strokeWidth={1.8} />,
+          });
+          return;
+        }
         setPublicState(true);
+        toast("Note is now public. Anyone with the link can view it.", {
+          icon: <Globe className="size-4" strokeWidth={1.8} />,
+          link: {
+            label: "Open",
+            href: `/notes/${noteId}`,
+          },
+        });
       }
     });
   }
