@@ -1,12 +1,11 @@
+// app/(app)/notes/page.tsx
 import { prisma } from "@/lib/prisma";
 import { Button } from "@/ui/button";
 import Link from "next/link";
-import { headers } from "next/headers";
-import { redirect } from "next/navigation";
-import { auth } from "@/lib/auth";
 import { formatDistanceToNowStrict } from "date-fns";
 import { cn } from "@/lib/utils";
-import { NotesFilters } from "./notes-filters";
+import { requireUser } from "@/lib/session";
+import { NotesToolbar } from "./notes-toolbar";
 import type { Prisma } from "@/generated/prisma/client";
 
 type NotesPageProps = {
@@ -14,10 +13,9 @@ type NotesPageProps = {
 };
 
 export default async function NotesPage({ searchParams }: NotesPageProps) {
-  const session = await auth.api.getSession({ headers: await headers() });
-  if (!session?.user?.id) redirect("/signin");
+  const user = await requireUser();
+  const userId = user.id;
 
-  const userId = session.user.id;
   const params = await searchParams;
   const query = (params.q ?? "").trim();
   const selectedTagIds = (params.tags ?? "")
@@ -58,16 +56,7 @@ export default async function NotesPage({ searchParams }: NotesPageProps) {
 
   return (
     <div className="mx-auto w-full max-w-4xl space-y-8">
-      <div className="flex items-center justify-between gap-4">
-        <h1 className="text-2xl font-semibold tracking-tight text-foreground">
-          Notes
-        </h1>
-        <Button>
-          <Link href="/notes/new">New note</Link>
-        </Button>
-      </div>
-
-      <NotesFilters tags={tags} selectedTagIds={selectedTagIds} query={query} />
+      <NotesToolbar tags={tags} selectedTagIds={selectedTagIds} query={query} />
 
       {notes.length === 0 ? (
         <p className="px-2 text-sm text-muted-foreground">
