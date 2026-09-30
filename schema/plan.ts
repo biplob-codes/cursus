@@ -1,18 +1,6 @@
 import { z } from "zod";
+import { parseDateOnly } from "@/lib/date";
 import { taskInputSchema } from "./task";
-
-function parseDateOnly(value: string): Date {
-  // Accept "yyyy-MM-dd" or a full ISO string; always keep the calendar day.
-  const match = /^(\d{4})-(\d{2})-(\d{2})/.exec(value);
-  if (!match) {
-    throw new Error("Invalid date");
-  }
-  const year = Number(match[1]);
-  const month = Number(match[2]);
-  const day = Number(match[3]);
-  // UTC noon avoids DST edge cases; @db.Date stores the calendar date only.
-  return new Date(Date.UTC(year, month - 1, day, 12, 0, 0));
-}
 
 export const createPlanWithTasksSchema = z.object({
   date: z

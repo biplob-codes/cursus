@@ -1,5 +1,6 @@
-import { startOfDay, subDays, format, eachDayOfInterval } from "date-fns";
+import { eachDayOfInterval, format, startOfDay, subDays } from "date-fns";
 import { prisma } from "@/lib/prisma";
+import { toDateString, todayDateOnly } from "@/lib/date";
 
 /**
  * 0 = no plan / no tasks
@@ -26,7 +27,7 @@ export type DayActivity = {
   percent: number; // 0–100, rounded
 };
 
-// Uses the rounded percent so the level always matches what the tooltip shows
+/** Uses the rounded percent so the level always matches what the tooltip shows. */
 export function levelFromPercent(percent: number): ActivityLevel {
   if (percent <= 25) return 1;
   if (percent <= 50) return 2;
@@ -37,26 +38,41 @@ export function levelFromPercent(percent: number): ActivityLevel {
 /**
  * One entry per day for the last `days` days (inclusive of today).
  * Days with no plan or no tasks get level 0.
+ *
+ * Query bounds use date-only (UTC noon) so they match Plan.date storage.
+ * Graph keys use the local calendar day so the contribution grid matches the user.
  */
 export async function getActivityData(
   userId: string,
   days = 365,
 ): Promise<DayActivity[]> {
-  const end = startOfDay(new Date());
-  const start = subDays(end, days - 1);
+  const endDateOnly = todayDateOnly();
+  const startDateOnly = new Date(
+    Date.UTC(
+      endDateOnly.getUTCFullYear(),
+      endDateOnly.getUTCMonth(),
+      endDateOnly.getUTCDate() - (days - 1),
+      12,
+      0,
+      0,
+    ),
+  );
 
   const plans = await prisma.plan.findMany({
-    where: { userId, date: { gte: start, lte: end } },
+    where: {
+      userId,
+      date: { gte: startDateOnly, lte: endDateOnly },
+    },
     select: {
       date: true,
       tasks: { select: { status: true } },
     },
   });
 
-  // Sum tasks across plans that land on the same day
+  // Sum tasks across plans that land on the same calendar day (UTC parts).
   const byDate = new Map<string, { total: number; done: number }>();
   for (const plan of plans) {
-    const key = format(plan.date, "yyyy-MM-dd");
+    const key = toDateString(plan.date);
     const prev = byDate.get(key) ?? { total: 0, done: 0 };
     byDate.set(key, {
       total: prev.total + plan.tasks.length,
@@ -64,7 +80,11 @@ export async function getActivityData(
     });
   }
 
-  return eachDayOfInterval({ start, end }).map((day) => {
+  // Local calendar interval for the contribution graph (weekdays, month labels).
+  const endLocal = startOfDay(new Date());
+  const startLocal = subDays(endLocal, days - 1);
+
+  return eachDayOfInterval({ start: startLocal, end: endLocal }).map((day) => {
     const key = format(day, "yyyy-MM-dd");
     const { total, done } = byDate.get(key) ?? { total: 0, done: 0 };
     const percent = total === 0 ? 0 : Math.round((done / total) * 100);

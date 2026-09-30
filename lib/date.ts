@@ -1,4 +1,3 @@
-// lib/date.ts
 import {
   differenceInCalendarDays,
   format,
@@ -20,6 +19,21 @@ export function todayDateOnly(): Date {
   );
 }
 
+/**
+ * Parse "yyyy-MM-dd" (or a longer ISO string starting with that) into a
+ * date-only value at UTC noon. Used by Zod schemas and any form input.
+ */
+export function parseDateOnly(value: string): Date {
+  const match = /^(\d{4})-(\d{2})-(\d{2})/.exec(value);
+  if (!match) {
+    throw new Error("Invalid date");
+  }
+  const year = Number(match[1]);
+  const month = Number(match[2]);
+  const day = Number(match[3]);
+  return new Date(Date.UTC(year, month - 1, day, 12, 0, 0));
+}
+
 /** yyyy-MM-dd for a date-only value (reads UTC parts). */
 export function toDateString(date: Date): string {
   const y = date.getUTCFullYear();
@@ -29,32 +43,42 @@ export function toDateString(date: Date): string {
 }
 
 /**
- * Format a plan date for display without timezone shift.
- * Builds a local Date from UTC Y/M/D so date-fns format stays on the same calendar day.
+ * Local calendar Date from a date-only (UTC noon) value so date-fns
+ * format / startOfDay stay on the intended calendar day.
  */
-export function formatDateOnly(date: Date, pattern = "d MMMM yyyy"): string {
-  const local = new Date(
+function localFromDateOnly(date: Date): Date {
+  return new Date(
     date.getUTCFullYear(),
     date.getUTCMonth(),
     date.getUTCDate(),
   );
-  return format(local, pattern);
 }
 
-export function getRelativeDayLabel(date: Date) {
-  const diff = differenceInCalendarDays(
-    startOfDay(date),
-    startOfDay(new Date()),
-  );
+/**
+ * Format a plan date for display without timezone shift.
+ * Builds a local Date from UTC Y/M/D so date-fns format stays on the same calendar day.
+ */
+export function formatDateOnly(date: Date, pattern = "d MMMM yyyy"): string {
+  return format(localFromDateOnly(date), pattern);
+}
+
+/**
+ * Relative label for a date-only value: today / tomorrow / yesterday / weekday.
+ * Compares calendar days in local time after lifting UTC Y/M/D.
+ */
+export function getRelativeDayLabel(date: Date): string {
+  const local = localFromDateOnly(date);
+  const diff = differenceInCalendarDays(startOfDay(local), startOfDay(new Date()));
   if (diff === 0) return "today";
   if (diff === 1) return "tomorrow";
   if (diff === -1) return "yesterday";
-  return format(date, "EEEE");
+  return format(local, "EEEE");
 }
 
 /**
  * Within the last 7 days → relative ("3 days ago").
  * Older → absolute calendar date ("23 Sep 2025").
+ * Intended for timestamps (createdAt / updatedAt), not @db.Date fields.
  */
 export function formatUpdatedAt(date: Date): string {
   const days = differenceInDays(new Date(), date);
