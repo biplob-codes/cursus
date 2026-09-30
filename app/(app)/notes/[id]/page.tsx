@@ -1,10 +1,8 @@
-import { headers } from "next/headers";
-import { notFound, redirect } from "next/navigation";
-import Link from "next/link";
-import { auth } from "@/lib/auth";
+// app/(app)/notes/[id]/page.tsx
+import { notFound } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import { format } from "date-fns";
-import { ArrowLeft } from "lucide-react";
+import { requireUser } from "@/lib/session";
 import { ShareControls } from "./share-controls";
 
 type Props = {
@@ -12,15 +10,13 @@ type Props = {
 };
 
 export default async function NotePage({ params }: Props) {
-  const session = await auth.api.getSession({ headers: await headers() });
-  if (!session?.user?.id) redirect("/signin");
-
+  const user = await requireUser();
   const { id } = await params;
 
   const note = await prisma.note.findFirst({
     where: {
       id,
-      userId: session.user.id,
+      userId: user.id,
     },
     include: {
       tags: {
@@ -35,20 +31,12 @@ export default async function NotePage({ params }: Props) {
 
   return (
     <article className="mx-auto w-full max-w-2xl">
-      <div className="mb-8 flex items-center justify-between gap-4">
-        <Link
-          href="/notes"
-          className="inline-flex items-center gap-1.5 text-sm text-muted-foreground transition-colors hover:text-foreground"
-        >
-          <ArrowLeft className="h-3.5 w-3.5" strokeWidth={1.8} />
-          Notes
-        </Link>
-        <Link
-          href={`/notes/${note.id}/edit`}
-          className="text-sm text-muted-foreground transition-colors hover:text-foreground"
-        >
-          Edit
-        </Link>
+      <div className="mb-8">
+        <ShareControls
+          noteId={note.id}
+          isPublic={note.isPublic}
+          shareToken={note.shareToken}
+        />
       </div>
 
       <h1 className="text-3xl font-semibold tracking-tight text-foreground">
@@ -74,14 +62,6 @@ export default async function NotePage({ params }: Props) {
           ))}
         </div>
       )}
-
-      <div className="mt-6">
-        <ShareControls
-          noteId={note.id}
-          isPublic={note.isPublic}
-          shareToken={note.shareToken}
-        />
-      </div>
 
       {note.description ? (
         <div

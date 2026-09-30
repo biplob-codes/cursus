@@ -1,7 +1,9 @@
+// app/(app)/notes/[id]/share-controls.tsx
 "use client";
 
 import { useState, useTransition } from "react";
-import { Check, Copy, Link2, Link2Off } from "lucide-react";
+import Link from "next/link";
+import { Check, Globe, Link as LinkIcon, Lock } from "lucide-react";
 import { enableNoteShare, disableNoteShare } from "@/actions/note";
 import { cn } from "@/lib/utils";
 
@@ -18,43 +20,31 @@ export function ShareControls({ noteId, isPublic, shareToken }: Props) {
   const [error, setError] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
 
-  const shareUrl =
-    typeof window !== "undefined" && token
-      ? `${window.location.origin}/share/notes/${token}`
-      : token
-        ? `/share/notes/${token}`
-        : null;
-
-  function handleEnable() {
+  function toggleVisibility() {
     setError(null);
     startTransition(async () => {
-      const result = await enableNoteShare(noteId);
-      if (result.status === "error") {
-        setError(result.message);
-        return;
+      if (publicState) {
+        const result = await disableNoteShare(noteId);
+        if (result.status === "error") {
+          setError(result.message);
+          return;
+        }
+        setPublicState(false);
+      } else {
+        const result = await enableNoteShare(noteId);
+        if (result.status === "error") {
+          setError(result.message);
+          return;
+        }
+        setPublicState(true);
+        setToken(result.shareToken);
       }
-      setPublicState(true);
-      setToken(result.shareToken);
     });
   }
 
-  function handleDisable() {
-    setError(null);
-    startTransition(async () => {
-      const result = await disableNoteShare(noteId);
-      if (result.status === "error") {
-        setError(result.message);
-        return;
-      }
-      setPublicState(false);
-    });
-  }
-
-  async function handleCopy() {
-    if (!shareUrl) return;
-    const full = shareUrl.startsWith("http")
-      ? shareUrl
-      : `${window.location.origin}${shareUrl}`;
+  async function handleCopyLink() {
+    if (!publicState || !token) return;
+    const full = `${window.location.origin}/share/notes/${token}`;
     try {
       await navigator.clipboard.writeText(full);
       setCopied(true);
@@ -64,82 +54,69 @@ export function ShareControls({ noteId, isPublic, shareToken }: Props) {
     }
   }
 
-  return (
-    <div className="space-y-3 rounded-lg border border-border/60 bg-muted/30 px-3 py-3">
-      <div className="flex items-center justify-between gap-3">
-        <div className="min-w-0">
-          <p className="text-sm font-medium text-foreground">Share</p>
-          <p className="text-xs text-muted-foreground">
-            {publicState
-              ? "Anyone with the link can view this note."
-              : "Only you can see this note."}
-          </p>
-        </div>
+  const linkEnabled = publicState && !!token;
 
-        {publicState ? (
+  return (
+    <div className="flex flex-col gap-1">
+      <div className="flex items-center justify-end gap-5">
+        <div className="flex items-center">
           <button
             type="button"
-            onClick={handleDisable}
+            onClick={toggleVisibility}
             disabled={isPending}
+            aria-label={publicState ? "Make note private" : "Make note public"}
             className={cn(
-              "inline-flex shrink-0 items-center gap-1.5 rounded-md px-2.5 py-1.5 text-xs font-medium transition-colors",
+              "inline-flex items-center gap-1.5 rounded-md px-2 py-1.5 text-sm transition-colors",
               "text-muted-foreground hover:bg-muted hover:text-foreground",
               "disabled:opacity-50",
+              publicState && "text-foreground",
             )}
           >
-            <Link2Off className="h-3.5 w-3.5" strokeWidth={1.8} />
-            {isPending ? "…" : "Stop sharing"}
-          </button>
-        ) : (
-          <button
-            type="button"
-            onClick={handleEnable}
-            disabled={isPending}
-            className={cn(
-              "inline-flex shrink-0 items-center gap-1.5 rounded-md px-2.5 py-1.5 text-xs font-medium transition-colors",
-              "bg-foreground text-background hover:opacity-90",
-              "disabled:opacity-50",
+            {publicState ? (
+              <Globe className="size-3.5" strokeWidth={1.8} />
+            ) : (
+              <Lock className="size-3.5" strokeWidth={1.8} />
             )}
-          >
-            <Link2 className="h-3.5 w-3.5" strokeWidth={1.8} />
-            {isPending ? "…" : "Share"}
+            <span>{publicState ? "Public" : "Private"}</span>
           </button>
-        )}
-      </div>
 
-      {publicState && token && (
-        <div className="flex items-center gap-2">
-          <input
-            readOnly
-            value={
-              typeof window !== "undefined"
-                ? `${window.location.origin}/share/notes/${token}`
-                : `/share/notes/${token}`
-            }
-            className="min-w-0 flex-1 truncate rounded-md border border-border bg-background px-2.5 py-1.5 text-xs text-muted-foreground outline-none"
-          />
+          {/* Copy share link — disabled when private */}
           <button
             type="button"
-            onClick={handleCopy}
+            onClick={handleCopyLink}
+            disabled={!linkEnabled}
+            aria-label={
+              linkEnabled ? "Copy share link" : "Share link unavailable"
+            }
+            title={
+              linkEnabled
+                ? copied
+                  ? "Copied"
+                  : "Copy link"
+                : "Make the note public to copy the link"
+            }
             className={cn(
-              "inline-flex shrink-0 items-center gap-1.5 rounded-md border border-border px-2.5 py-1.5 text-xs font-medium transition-colors",
-              "text-foreground hover:bg-muted",
+              "inline-flex size-8 items-center justify-center rounded-md transition-colors",
+              linkEnabled
+                ? "text-muted-foreground hover:bg-muted hover:text-foreground"
+                : "cursor-not-allowed text-muted-foreground/35",
             )}
           >
             {copied ? (
-              <>
-                <Check className="h-3.5 w-3.5" strokeWidth={1.8} />
-                Copied
-              </>
+              <Check className="size-3.5" strokeWidth={1.8} />
             ) : (
-              <>
-                <Copy className="h-3.5 w-3.5" strokeWidth={1.8} />
-                Copy
-              </>
+              <LinkIcon className="size-3.5" strokeWidth={1.8} />
             )}
           </button>
         </div>
-      )}
+
+        <Link
+          href={`/notes/${noteId}/edit`}
+          className="text-sm text-muted-foreground transition-colors hover:text-foreground"
+        >
+          Edit
+        </Link>
+      </div>
 
       {error && <p className="text-xs text-destructive">{error}</p>}
     </div>
