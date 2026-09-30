@@ -1,16 +1,16 @@
 "use client";
 
-import { DailyPlansIcon } from "@/icons/daily-plans";
-import { NotesIcon } from "@/icons/notes";
-import { cn } from "@/lib/utils";
-import { useSession } from "@/lib/auth-client";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { DailyPlansIcon } from "@/icons/daily-plans";
+import { NotesIcon } from "@/icons/notes";
+import { useSession } from "@/lib/auth-client";
+import { cn } from "@/lib/utils";
 
 const navItems = [
   { label: "Daily plans", href: "/plans", icon: DailyPlansIcon },
   { label: "Notes", href: "/notes", icon: NotesIcon },
-];
+] as const;
 
 function UserAvatar({
   name,
@@ -45,7 +45,7 @@ export default function Sidebar() {
 
   return (
     <aside className="flex h-full w-60 flex-col border-r border-border bg-accent/50">
-      <Link href={"/"}>
+      <Link href="/">
         <div className="flex items-center gap-2 px-3 py-3 text-lg">
           <div className="flex h-5 w-5 items-center justify-center rounded bg-blue-500 font-semibold text-white">
             C
