@@ -4,8 +4,9 @@
 import Link from "next/link";
 import { useRouter, usePathname, useSearchParams } from "next/navigation";
 import { useCallback, useEffect, useRef, useState, useTransition } from "react";
-import { Search, ListFilter, X } from "lucide-react";
+import { Search, ListFilter, X, Check } from "lucide-react";
 import { Button } from "@/ui/button";
+import { Popover, PopoverContent, PopoverTrigger } from "@/ui/popover";
 import { cn } from "@/lib/utils";
 
 export type TagOption = { id: string; name: string };
@@ -17,12 +18,10 @@ type NotesToolbarProps = {
 };
 
 export function NotesToolbar({
-  tags: _tags,
+  tags,
   selectedTagIds,
   query,
 }: NotesToolbarProps) {
-  void _tags; // step 3
-
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
@@ -32,7 +31,6 @@ export function NotesToolbar({
   const [searchValue, setSearchValue] = useState(query);
   const inputRef = useRef<HTMLInputElement>(null);
 
-  // Keep local state in sync when URL changes (e.g. back/forward)
   useEffect(() => {
     setSearchValue(query);
     if (query.length > 0) setSearchOpen(true);
@@ -89,6 +87,17 @@ export function NotesToolbar({
     }
   }
 
+  function toggleTag(id: string) {
+    const next = selectedTagIds.includes(id)
+      ? selectedTagIds.filter((t) => t !== id)
+      : [...selectedTagIds, id];
+    updateParams({ tags: next });
+  }
+
+  function clearTags() {
+    updateParams({ tags: [] });
+  }
+
   const hasQuery = query.length > 0;
   const hasTagFilter = selectedTagIds.length > 0;
 
@@ -122,9 +131,7 @@ export function NotesToolbar({
               className={cn(
                 "min-w-0 flex-1 bg-transparent text-sm outline-none",
                 "placeholder:text-muted-foreground/60",
-                // no border, no ring, no background
                 "border-0 shadow-none ring-0 focus:outline-none",
-                // hide native search clear on webkit so we own the UX
                 "[&::-webkit-search-cancel-button]:hidden",
               )}
             />
@@ -155,18 +162,69 @@ export function NotesToolbar({
           </button>
         )}
 
-        {/* Filter — behavior in step 3 */}
-        <button
-          type="button"
-          aria-label="Filter by tags"
-          className={cn(
-            "inline-flex size-8 items-center justify-center rounded-md text-muted-foreground transition-colors",
-            "hover:bg-muted hover:text-foreground",
-            hasTagFilter && "text-foreground",
-          )}
-        >
-          <ListFilter className="size-4" strokeWidth={1.8} />
-        </button>
+        {/* Tag filter */}
+        <Popover>
+          <PopoverTrigger
+            aria-label="Filter by tags"
+            className={cn(
+              "inline-flex size-8 items-center justify-center rounded-md text-muted-foreground transition-colors",
+              "hover:bg-muted hover:text-foreground",
+              hasTagFilter && "text-foreground",
+            )}
+          >
+            <ListFilter className="size-4" strokeWidth={1.8} />
+          </PopoverTrigger>
+          <PopoverContent align="end" className="w-56 p-1.5">
+            {tags.length === 0 ? (
+              <p className="px-2 py-2 text-xs text-muted-foreground">
+                No tags yet.
+              </p>
+            ) : (
+              <div className="flex flex-col gap-0.5">
+                {tags.map((tag) => {
+                  const active = selectedTagIds.includes(tag.id);
+                  return (
+                    <button
+                      key={tag.id}
+                      type="button"
+                      onClick={() => toggleTag(tag.id)}
+                      className={cn(
+                        "flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-left text-sm transition-colors",
+                        active
+                          ? "bg-muted text-foreground"
+                          : "text-muted-foreground hover:bg-muted/60 hover:text-foreground",
+                      )}
+                    >
+                      <span
+                        className={cn(
+                          "flex size-3.5 shrink-0 items-center justify-center rounded-sm border",
+                          active
+                            ? "border-foreground bg-foreground text-background"
+                            : "border-border",
+                        )}
+                      >
+                        {active && (
+                          <Check className="size-2.5" strokeWidth={3} />
+                        )}
+                      </span>
+                      <span className="min-w-0 truncate">{tag.name}</span>
+                    </button>
+                  );
+                })}
+                {hasTagFilter && (
+                  <button
+                    type="button"
+                    onClick={clearTags}
+                    className="mt-0.5 flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-left text-xs text-muted-foreground hover:bg-muted/60 hover:text-foreground"
+                  >
+                    <X className="size-3" strokeWidth={1.8} />
+                    Clear tags
+                  </button>
+                )}
+              </div>
+            )}
+          </PopoverContent>
+        </Popover>
 
         <Button className="ml-1 shrink-0">
           <Link href="/notes/new">New</Link>
