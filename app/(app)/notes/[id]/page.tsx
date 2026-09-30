@@ -30,7 +30,7 @@ export default async function NotePage({ params }: Props) {
   const tags = note.tags.map((nt) => nt.tag);
 
   return (
-    <article className="mx-auto w-full max-w-2xl">
+    <article className="mx-auto w-full max-w-4xl">
       <div className="mb-8">
         <ShareControls
           noteId={note.id}
@@ -43,25 +43,31 @@ export default async function NotePage({ params }: Props) {
         {note.title}
       </h1>
 
-      <p className="mt-2 text-sm text-muted-foreground">
-        Updated {format(note.updatedAt, "d MMM yyyy")}
-        {note.createdAt.getTime() !== note.updatedAt.getTime() && (
-          <> · Created {format(note.createdAt, "d MMM yyyy")}</>
-        )}
-      </p>
+      {/* under the <h1> … */}
+      <div className="mt-2 flex min-w-0 items-center gap-2 text-sm text-muted-foreground">
+        <span className="shrink-0">
+          Last updated at {format(note.updatedAt, "d MMM yyyy")}
+        </span>
 
-      {tags.length > 0 && (
-        <div className="mt-4 flex flex-wrap gap-2">
-          {tags.map((tag) => (
-            <span
-              key={tag.id}
-              className="inline-flex h-7 items-center rounded-md bg-muted px-2 text-[13px] text-foreground"
-            >
-              {tag.name}
+        {tags.length > 0 && (
+          <>
+            <span className="shrink-0" aria-hidden>
+              ·
             </span>
-          ))}
-        </div>
-      )}
+            <span
+              className="min-w-0 truncate text-foreground"
+              title={tags.map((t) => t.name).join(", ")}
+            >
+              {tags.map((tag, i) => (
+                <span key={tag.id}>
+                  {i > 0 && <span className="mx-1.5"> </span>}
+                  {tag.name}
+                </span>
+              ))}
+            </span>
+          </>
+        )}
+      </div>
 
       {note.description ? (
         <div
