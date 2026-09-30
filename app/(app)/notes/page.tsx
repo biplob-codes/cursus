@@ -1,10 +1,9 @@
 // app/(app)/notes/page.tsx
 import { prisma } from "@/lib/prisma";
 import Link from "next/link";
-import { cn } from "@/lib/utils";
 import { requireUser } from "@/lib/session";
-import { formatUpdatedAt } from "@/lib/date";
 import { NotesToolbar } from "./notes-toolbar";
+import { NotesTable } from "./notes-table";
 import type { Prisma } from "@/generated/prisma/client";
 
 type NotesPageProps = {
@@ -56,8 +55,7 @@ export default async function NotesPage({ searchParams }: NotesPageProps) {
 
   return (
     <div className="mx-auto w-full max-w-4xl">
-      {/* Stays put while the list scrolls inside main */}
-      <div className="sticky top-0 z-10 -mx-2 bg-background px-2 pb-4 pt-0">
+      <div className="sticky top-0 z-10 -mx-2 bg-background px-2 pb-4">
         <NotesToolbar
           tags={tags}
           selectedTagIds={selectedTagIds}
@@ -66,7 +64,7 @@ export default async function NotesPage({ searchParams }: NotesPageProps) {
       </div>
 
       {notes.length === 0 ? (
-        <p className="px-2 pt-4 text-sm text-muted-foreground">
+        <p className="px-2 pt-2 text-sm text-muted-foreground">
           {hasFilters ? (
             <>No notes match these filters.</>
           ) : (
@@ -82,38 +80,7 @@ export default async function NotesPage({ searchParams }: NotesPageProps) {
           )}
         </p>
       ) : (
-        <ul className="divide-y divide-border/70 my-5">
-          {notes.map((note) => (
-            <li key={note.id}>
-              <Link
-                href={`/notes/${note.id}`}
-                className={cn(
-                  "flex items-center gap-3 rounded-md px-2 py-3 transition-colors",
-                  "hover:bg-muted/50",
-                )}
-              >
-                <span className="min-w-0 flex-1 truncate text-sm font-medium text-foreground">
-                  {note.title}
-                </span>
-
-                <span
-                  className={cn(
-                    "shrink-0 rounded-md px-1.5 py-0.5 text-[11px] font-medium",
-                    note.isPublic
-                      ? "bg-emerald-500/10 text-emerald-700 dark:text-emerald-400"
-                      : "bg-muted text-muted-foreground",
-                  )}
-                >
-                  {note.isPublic ? "Public" : "Private"}
-                </span>
-
-                <span className="w-24 shrink-0 text-right text-xs tabular-nums text-muted-foreground">
-                  {formatUpdatedAt(note.updatedAt)}
-                </span>
-              </Link>
-            </li>
-          ))}
-        </ul>
+        <NotesTable notes={notes} />
       )}
     </div>
   );
