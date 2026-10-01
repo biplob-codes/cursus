@@ -1,20 +1,18 @@
 "use server";
 
-import { redirect } from "next/navigation";
 import { headers } from "next/headers";
+import { redirect } from "next/navigation";
+import type { AuthFormState } from "./action-state";
 import { auth } from "@/lib/auth";
 import { signInSchema } from "@/schema/signin";
 
-export type SignInState = {
-  values: {
-    email: string;
-    password: string;
-  };
-  errors: Partial<Record<"email" | "password" | "form", string>>;
-};
+export type SignInState = AuthFormState<{
+  email: string;
+  password: string;
+}>;
 
 export async function signInAction(
-  prevState: SignInState,
+  _prevState: SignInState,
   formData: FormData,
 ): Promise<SignInState> {
   const raw = {

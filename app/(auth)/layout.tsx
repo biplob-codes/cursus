@@ -1,11 +1,17 @@
-import { auth } from "@/lib/auth";
-import { headers } from "next/headers";
+import { getSession } from "@/lib/session";
 import { redirect } from "next/navigation";
 
-const AuthLayout = async ({ children }: { children: React.ReactNode }) => {
-  const session = await auth.api.getSession({ headers: await headers() });
+export default async function AuthLayout({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
+  const session = await getSession();
   if (session?.user) redirect("/");
-  return <div>{children}</div>;
-};
 
-export default AuthLayout;
+  return (
+    <main className="flex min-h-screen items-center justify-center bg-background px-4">
+      {children}
+    </main>
+  );
+}

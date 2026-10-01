@@ -1,21 +1,19 @@
 "use server";
 
-import { redirect } from "next/navigation";
 import { headers } from "next/headers";
+import { redirect } from "next/navigation";
+import type { AuthFormState } from "./action-state";
 import { auth } from "@/lib/auth";
 import { signUpSchema } from "@/schema/signup";
 
-export type SignUpState = {
-  values: {
-    name: string;
-    email: string;
-    password: string;
-  };
-  errors: Partial<Record<"name" | "email" | "password" | "form", string>>;
-};
+export type SignUpState = AuthFormState<{
+  name: string;
+  email: string;
+  password: string;
+}>;
 
 export async function signUpAction(
-  prevState: SignUpState,
+  _prevState: SignUpState,
   formData: FormData,
 ): Promise<SignUpState> {
   const raw = {
@@ -39,8 +37,6 @@ export async function signUpAction(
   }
 
   try {
-    console.log(parsed);
-
     await auth.api.signUpEmail({
       body: {
         name: parsed.data.name,
@@ -60,5 +56,6 @@ export async function signUpAction(
       },
     };
   }
+
   redirect("/");
 }

@@ -1,9 +1,10 @@
 "use client";
 
-import { signUpAction, SignUpState } from "@/actions/signup";
 import { useActionState } from "react";
 import Link from "next/link";
-import { GitHubButton } from "../github-button";
+import { signUpAction, type SignUpState } from "@/actions/signup";
+import { AuthField } from "@/components/auth-field";
+import { GitHubButton } from "@/components/github-button";
 
 const initialState: SignUpState = {
   values: { name: "", email: "", password: "" },
@@ -17,7 +18,7 @@ export function SignUpForm() {
   );
 
   return (
-    <form action={formAction} className="w-full max-w-[360px]">
+    <form action={formAction} className="w-full max-w-2xl">
       <h1 className="text-2xl font-semibold tracking-tight text-foreground">
         Create your account
       </h1>
@@ -25,20 +26,20 @@ export function SignUpForm() {
         Already have an account?{" "}
         <Link
           href="/signin"
-          className="text-primary hover:underline underline-offset-2"
+          className="text-primary underline-offset-2 hover:underline"
         >
           Sign in
         </Link>
       </p>
 
-      {state.errors.form && (
+      {state.errors.form ? (
         <div className="mt-5 rounded-md border border-destructive/20 bg-destructive/10 px-3 py-2 text-sm text-destructive">
           {state.errors.form}
         </div>
-      )}
+      ) : null}
 
       <div className="mt-6 flex flex-col gap-3.5">
-        <Field
+        <AuthField
           label="Name"
           name="name"
           type="text"
@@ -46,7 +47,7 @@ export function SignUpForm() {
           defaultValue={state.values.name}
           error={state.errors.name}
         />
-        <Field
+        <AuthField
           label="Email"
           name="email"
           type="email"
@@ -54,7 +55,7 @@ export function SignUpForm() {
           defaultValue={state.values.email}
           error={state.errors.email}
         />
-        <Field
+        <AuthField
           label="Password"
           name="password"
           type="password"
@@ -83,42 +84,5 @@ export function SignUpForm() {
 
       <GitHubButton />
     </form>
-  );
-}
-
-function Field({
-  label,
-  name,
-  type,
-  autoComplete,
-  defaultValue,
-  error,
-}: {
-  label: string;
-  name: string;
-  type: string;
-  autoComplete: string;
-  defaultValue: string;
-  error?: string;
-}) {
-  return (
-    <div>
-      <label
-        htmlFor={name}
-        className="mb-1.5 block text-sm font-medium text-foreground"
-      >
-        {label}
-      </label>
-      <input
-        id={name}
-        name={name}
-        type={type}
-        autoComplete={autoComplete}
-        defaultValue={defaultValue}
-        aria-invalid={Boolean(error)}
-        className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground outline-none transition-colors placeholder:text-muted-foreground focus:border-ring focus:ring-2 focus:ring-ring/20"
-      />
-      {error && <p className="mt-1.5 text-xs text-destructive">{error}</p>}
-    </div>
   );
 }
