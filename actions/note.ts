@@ -1,12 +1,11 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { ActionState } from "./action-state";
 import { createNoteSchema, updateNoteSchema } from "@/schema/note";
 import { prisma } from "@/lib/prisma";
-import { auth } from "@/lib/auth";
+import { getSessionUser } from "@/lib/session";
 
 async function resolveTagIds(
   userId: string,
@@ -47,15 +46,15 @@ export async function createNote(
   _prevState: ActionState,
   formData: FormData,
 ): Promise<ActionState> {
-  const session = await auth.api.getSession({ headers: await headers() });
-  if (!session?.user?.id) {
+  const user = await getSessionUser();
+  if (!user?.id) {
     return {
       status: "error",
       message: "You must be signed in to create a note.",
     };
   }
 
-  const userId = session.user.id;
+  const userId = user.id;
 
   let tagIds: unknown = [];
   let newTagNames: unknown = [];
@@ -127,15 +126,15 @@ export async function updateNote(
   _prevState: ActionState,
   formData: FormData,
 ): Promise<ActionState> {
-  const session = await auth.api.getSession({ headers: await headers() });
-  if (!session?.user?.id) {
+  const user = await getSessionUser();
+  if (!user?.id) {
     return {
       status: "error",
       message: "You must be signed in to update a note.",
     };
   }
 
-  const userId = session.user.id;
+  const userId = user.id;
 
   let tagIds: unknown = [];
   let newTagNames: unknown = [];
@@ -218,6 +217,7 @@ export async function updateNote(
   revalidatePath(`/notes/${id}`);
   redirect(`/notes/${id}`);
 }
+
 function generateShareToken() {
   // 24-char URL-safe token
   const bytes = new Uint8Array(18);
@@ -231,13 +231,13 @@ export async function enableNoteShare(
   | { status: "success"; shareToken: string }
   | { status: "error"; message: string }
 > {
-  const session = await auth.api.getSession({ headers: await headers() });
-  if (!session?.user?.id) {
+  const user = await getSessionUser();
+  if (!user?.id) {
     return { status: "error", message: "You must be signed in." };
   }
 
   const note = await prisma.note.findFirst({
-    where: { id: noteId, userId: session.user.id },
+    where: { id: noteId, userId: user.id },
     select: { id: true, shareToken: true },
   });
 
@@ -264,13 +264,13 @@ export async function enableNoteShare(
 export async function disableNoteShare(
   noteId: string,
 ): Promise<{ status: "success" } | { status: "error"; message: string }> {
-  const session = await auth.api.getSession({ headers: await headers() });
-  if (!session?.user?.id) {
+  const user = await getSessionUser();
+  if (!user?.id) {
     return { status: "error", message: "You must be signed in." };
   }
 
   const note = await prisma.note.findFirst({
-    where: { id: noteId, userId: session.user.id },
+    where: { id: noteId, userId: user.id },
     select: { id: true, shareToken: true },
   });
 

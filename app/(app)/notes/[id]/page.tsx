@@ -1,7 +1,6 @@
-// app/(app)/notes/[id]/page.tsx
 import { notFound } from "next/navigation";
+import { formatUpdatedAt } from "@/lib/date";
 import { prisma } from "@/lib/prisma";
-import { format } from "date-fns";
 import { requireUser } from "@/lib/session";
 import { ShareControls } from "./share-controls";
 
@@ -43,10 +42,9 @@ export default async function NotePage({ params }: Props) {
         {note.title}
       </h1>
 
-      {/* under the <h1> … */}
       <div className="mt-2 flex min-w-0 items-center gap-2 text-sm text-muted-foreground">
         <span className="shrink-0">
-          Last updated at {format(note.updatedAt, "d MMM yyyy")}
+          Last updated {formatUpdatedAt(note.updatedAt)}
         </span>
 
         {tags.length > 0 && (
