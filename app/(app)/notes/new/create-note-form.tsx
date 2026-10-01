@@ -5,7 +5,7 @@ import { createNote } from "@/actions/note";
 import { initialActionState } from "@/actions/action-state";
 import { Button } from "@/ui/button";
 
-import { NoteTagPicker, type TagOption } from "./note-tag-picker";
+import { NoteTagPicker, type TagOption } from "@/components/note-tag-picker";
 import { RichTextEditor } from "@/components/rich-text-editor";
 
 export function CreateNoteForm({

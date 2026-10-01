@@ -66,7 +66,6 @@ export function NoteTagPicker({
 
   const showMenu = open && items.length > 0;
 
-  // Keep highlight in range when the list changes
   useEffect(() => {
     setHighlightIndex(0);
   }, [query]);
@@ -199,7 +198,6 @@ export function NoteTagPicker({
           }}
           onFocus={() => setOpen(true)}
           onBlur={() => {
-            // Delay so mousedown on a suggestion still registers
             setTimeout(() => setOpen(false), 150);
           }}
           onKeyDown={handleKeyDown}

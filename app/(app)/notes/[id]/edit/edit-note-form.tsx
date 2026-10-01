@@ -2,10 +2,7 @@
 
 import { initialActionState } from "@/actions/action-state";
 import { updateNote } from "@/actions/note";
-import {
-  NoteTagPicker,
-  type TagOption,
-} from "@/app/(app)/notes/new/note-tag-picker";
+import { NoteTagPicker, type TagOption } from "@/components/note-tag-picker";
 import { RichTextEditor } from "@/components/rich-text-editor";
 import { Button } from "@/ui/button";
 import { ArrowLeft } from "lucide-react";
