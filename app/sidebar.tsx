@@ -6,37 +6,12 @@ import { DailyPlansIcon } from "@/icons/daily-plans";
 import { NotesIcon } from "@/icons/notes";
 import { useSession } from "@/lib/auth-client";
 import { cn } from "@/lib/utils";
+import { UserAvatar } from "@/components/user-avatar";
 
 const navItems = [
   { label: "Daily plans", href: "/plans", icon: DailyPlansIcon },
   { label: "Notes", href: "/notes", icon: NotesIcon },
 ] as const;
-
-function UserAvatar({
-  name,
-  image,
-}: {
-  name: string;
-  image: string | null | undefined;
-}) {
-  if (image) {
-    return (
-      <img
-        src={image}
-        alt={name}
-        className="h-5 w-5 shrink-0 rounded-full object-cover"
-        referrerPolicy="no-referrer"
-      />
-    );
-  }
-
-  const initial = name?.charAt(0)?.toUpperCase() || "?";
-  return (
-    <div className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-muted text-[11px] font-medium text-muted-foreground">
-      {initial}
-    </div>
-  );
-}
 
 export default function Sidebar() {
   const pathname = usePathname();

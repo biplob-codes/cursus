@@ -5,41 +5,7 @@ import { useRouter } from "next/navigation";
 import { Moon, Sun, LogOut } from "lucide-react";
 import { authClient, useSession } from "@/lib/auth-client";
 import { cn } from "@/lib/utils";
-
-function UserAvatar({
-  name,
-  image,
-  size = "lg",
-}: {
-  name: string;
-  image: string | null | undefined;
-  size?: "sm" | "lg";
-}) {
-  const sizeClass = size === "lg" ? "h-16 w-16 text-xl" : "h-5 w-5 text-[11px]";
-
-  if (image) {
-    return (
-      <img
-        src={image}
-        alt={name}
-        className={cn("shrink-0 rounded-full object-cover", sizeClass)}
-        referrerPolicy="no-referrer"
-      />
-    );
-  }
-
-  const initial = name?.charAt(0)?.toUpperCase() || "?";
-  return (
-    <div
-      className={cn(
-        "flex shrink-0 items-center justify-center rounded-full bg-muted font-medium text-muted-foreground",
-        sizeClass,
-      )}
-    >
-      {initial}
-    </div>
-  );
-}
+import { UserAvatar } from "@/components/user-avatar";
 
 export function ProfileForm() {
   const router = useRouter();
