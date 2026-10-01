@@ -52,7 +52,7 @@ function ToolbarButton({
   );
 }
 
-export function TaskDescriptionEditor({
+export function RichTextEditor({
   value,
   onChange,
   placeholder = "Add a description…",
@@ -123,7 +123,6 @@ export function TaskDescriptionEditor({
     const { from, to, empty } = editor.state.selection;
 
     if (empty) {
-      // No selection → insert the URL as visible linked text
       editor
         .chain()
         .focus()
@@ -134,7 +133,6 @@ export function TaskDescriptionEditor({
         })
         .run();
     } else {
-      // Selection → turn selected text into a link
       editor
         .chain()
         .focus()

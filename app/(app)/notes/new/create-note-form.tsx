@@ -4,8 +4,9 @@ import { useActionState, useState } from "react";
 import { createNote } from "@/actions/note";
 import { initialActionState } from "@/actions/action-state";
 import { Button } from "@/ui/button";
-import { TaskDescriptionEditor } from "@/app/(app)/plans/new/task-description-editor";
+
 import { NoteTagPicker, type TagOption } from "./note-tag-picker";
+import { RichTextEditor } from "@/components/rich-text-editor";
 
 export function CreateNoteForm({
   existingTags,
@@ -59,7 +60,7 @@ export function CreateNoteForm({
 
       {/* Description — no border, same editor */}
       <div className="space-y-1">
-        <TaskDescriptionEditor
+        <RichTextEditor
           value={description}
           onChange={setDescription}
           placeholder="Start writing…"

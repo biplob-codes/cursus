@@ -3,8 +3,8 @@
 import { X } from "lucide-react";
 import { TaskInput } from "@/schema/task";
 import { Select, SelectContent, SelectItem, SelectTrigger } from "@/ui/select";
-import { TaskDescriptionEditor } from "./task-description-editor";
 import { cn } from "@/lib/utils";
+import { RichTextEditor } from "@/components/rich-text-editor";
 
 type Draft = {
   title: string;
@@ -156,7 +156,7 @@ export function TaskEditorPanel({
         </div>
 
         <div className="flex-1">
-          <TaskDescriptionEditor
+          <RichTextEditor
             value={draft.description}
             onChange={(html) => onChange({ description: html })}
           />

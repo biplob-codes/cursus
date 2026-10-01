@@ -1,16 +1,16 @@
 "use client";
 
-import { useActionState, useState } from "react";
-import Link from "next/link";
-import { ArrowLeft } from "lucide-react";
-import { updateNote } from "@/actions/note";
 import { initialActionState } from "@/actions/action-state";
-import { Button } from "@/ui/button";
-import { TaskDescriptionEditor } from "@/app/(app)/plans/new/task-description-editor";
+import { updateNote } from "@/actions/note";
 import {
   NoteTagPicker,
   type TagOption,
 } from "@/app/(app)/notes/new/note-tag-picker";
+import { RichTextEditor } from "@/components/rich-text-editor";
+import { Button } from "@/ui/button";
+import { ArrowLeft } from "lucide-react";
+import Link from "next/link";
+import { useActionState, useState } from "react";
 
 type NoteData = {
   id: string;
@@ -78,7 +78,7 @@ export function EditNoteForm({
       </div>
 
       <div className="space-y-1">
-        <TaskDescriptionEditor
+        <RichTextEditor
           value={description}
           onChange={setDescription}
           placeholder="Start writing…"
