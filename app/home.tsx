@@ -8,7 +8,7 @@ import {
   ListChecks,
   Sparkles,
 } from "lucide-react";
-import { GithubIcon } from "./github-icon";
+import { GithubIcon } from "@/components/github-icon";
 
 export default function Home() {
   return (

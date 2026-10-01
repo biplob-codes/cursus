@@ -1,5 +1,6 @@
+import { AppShell } from "@/components/app-shell";
 import Home from "../home";
-import { AppShell } from "../app-shell";
+
 import { getSession } from "@/lib/session";
 
 export default async function AppLayout({

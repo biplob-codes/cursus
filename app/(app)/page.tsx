@@ -1,9 +1,9 @@
+import { ActivityGraph } from "@/components/activity-graph";
 import { TodaysPlansSection } from "@/components/todays-plan";
 import { getActivityData } from "@/lib/activity";
 import { todayDateOnly } from "@/lib/date";
 import { prisma } from "@/lib/prisma";
 import { requireUser } from "@/lib/session";
-import { ActivityGraph } from "../activity-graph";
 
 export default async function HomePage() {
   const user = await requireUser();

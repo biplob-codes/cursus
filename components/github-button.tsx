@@ -1,8 +1,9 @@
 "use client";
 
 import { useState } from "react";
-import { GithubIcon } from "@/app/github-icon";
+
 import { authClient } from "@/lib/auth-client";
+import { GithubIcon } from "./github-icon";
 
 export function GitHubButton() {
   const [isLoading, setIsLoading] = useState(false);
