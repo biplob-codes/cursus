@@ -3,6 +3,7 @@ import { formatUpdatedAt } from "@/lib/date";
 import { prisma } from "@/lib/prisma";
 import { requireUser } from "@/lib/session";
 import { ShareControls } from "./share-controls";
+import { NoteBody } from "@/components/note-body";
 
 type Props = {
   params: Promise<{ id: string }>;
@@ -67,20 +68,7 @@ export default async function NotePage({ params }: Props) {
         )}
       </div>
 
-      {note.description ? (
-        <div
-          className="prose prose-sm dark:prose-invert mt-10 max-w-none text-foreground
-            [&_ul]:list-disc [&_ul]:pl-5 [&_ol]:list-decimal [&_ol]:pl-5
-            [&_h2]:text-lg [&_h2]:font-semibold [&_h3]:text-base [&_h3]:font-semibold
-            [&_a]:text-primary [&_a]:underline [&_a]:underline-offset-2
-            [&_p]:leading-relaxed"
-          dangerouslySetInnerHTML={{ __html: note.description }}
-        />
-      ) : (
-        <p className="mt-10 text-sm text-muted-foreground/50">
-          No content yet.
-        </p>
-      )}
+      <NoteBody html={note.description} className="mt-10" />
     </article>
   );
 }
