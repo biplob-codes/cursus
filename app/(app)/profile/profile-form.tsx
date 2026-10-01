@@ -1,10 +1,10 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Moon, Sun, LogOut } from "lucide-react";
-import { cn } from "@/lib/utils";
-import { authClient, useSession } from "@/lib/auth-client";
 import { useRouter } from "next/navigation";
+import { Moon, Sun, LogOut } from "lucide-react";
+import { authClient, useSession } from "@/lib/auth-client";
+import { cn } from "@/lib/utils";
 
 function UserAvatar({
   name,
@@ -68,24 +68,22 @@ export function ProfileForm() {
     try {
       await authClient.signOut();
       router.push("/signin");
-    } catch (error) {
-      console.error(error);
+    } catch {
       setIsLoggingOut(false);
     }
   };
 
   if (!mounted) {
-    return null; // avoid hydration mismatch
+    return null;
   }
 
   return (
     <div className="space-y-10">
-      {/* Identity Section */}
       <section className="space-y-4">
         <div>
           <h2 className="text-sm font-medium text-foreground">Account</h2>
           <p className="mt-0.5 text-sm text-muted-foreground">
-            Your profile information from GitHub.
+            Your profile information.
           </p>
         </div>
 
@@ -112,7 +110,6 @@ export function ProfileForm() {
         )}
       </section>
 
-      {/* Appearance Section */}
       <section className="space-y-4">
         <div>
           <h2 className="text-sm font-medium text-foreground">Appearance</h2>
@@ -121,7 +118,7 @@ export function ProfileForm() {
           </p>
         </div>
 
-        <div className="grid grid-cols-2 gap-3 max-w-sm">
+        <div className="grid max-w-sm grid-cols-2 gap-3">
           <button
             type="button"
             onClick={() => setThemePreference("light")}
@@ -158,7 +155,6 @@ export function ProfileForm() {
         </div>
       </section>
 
-      {/* Sign out Section */}
       <section className="space-y-4 border-t border-border pt-8">
         <div>
           <h2 className="text-sm font-medium text-foreground">Sign out</h2>

@@ -1,11 +1,15 @@
+import { requireUser } from "@/lib/session";
 import { ProfileForm } from "./profile-form";
 
-export default function ProfilePage() {
+export default async function ProfilePage() {
+  await requireUser();
+
   return (
-    <main className="flex-1 overflow-y-auto">
-      <div className="mx-auto max-w-4xl">
-        <ProfileForm />
-      </div>
-    </main>
+    <div className="mx-auto w-full max-w-4xl space-y-10">
+      <h1 className="text-2xl font-semibold tracking-tight text-foreground">
+        Profile
+      </h1>
+      <ProfileForm />
+    </div>
   );
 }
