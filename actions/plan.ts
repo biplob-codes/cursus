@@ -1,19 +1,18 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { ActionState } from "./action-state";
-import { createPlanWithTasksSchema } from "@/schema/plan";
 import { prisma } from "@/lib/prisma";
-import { auth } from "@/lib/auth";
+import { getSessionUser } from "@/lib/session";
+import { createPlanWithTasksSchema } from "@/schema/plan";
 
 export async function createPlanWithTasks(
   _prevState: ActionState,
   formData: FormData,
 ): Promise<ActionState> {
-  const session = await auth.api.getSession({ headers: await headers() });
-  if (!session?.user?.id) {
+  const user = await getSessionUser();
+  if (!user?.id) {
     return {
       status: "error",
       message: "You must be signed in to create a plan.",
@@ -45,7 +44,7 @@ export async function createPlanWithTasks(
   }
 
   const { date, note, tasks } = parsed.data;
-  const userId = session.user.id;
+  const userId = user.id;
 
   try {
     await prisma.$transaction(async (tx) => {

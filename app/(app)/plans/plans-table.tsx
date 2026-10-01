@@ -1,21 +1,14 @@
 import Link from "next/link";
-import { format, formatDistanceToNowStrict } from "date-fns";
-import { Plan, Task } from "@/generated/prisma/client";
-import { getRelativeDayLabel } from "@/lib/date";
-import { Calendar, ListChecks, ListTodo, Clock, RefreshCw } from "lucide-react";
+import { formatDistanceToNowStrict } from "date-fns";
+import type { Plan, Task } from "@/generated/prisma/client";
+import { formatDateOnly, getRelativeDayLabel } from "@/lib/date";
+import { planProgress } from "@/lib/plan";
 import { cn } from "@/lib/utils";
-
-function planStats(tasks: Task[]) {
-  const total = tasks.length;
-  const done = tasks.filter((t) => t.status === "DONE").length;
-  const progress = total === 0 ? 0 : Math.round((done / total) * 100);
-  return { total, done, progress };
-}
+import { Calendar, ListChecks, ListTodo, Clock, RefreshCw } from "lucide-react";
 
 function formatPlanDate(date: Date) {
-  const absolute = format(date, "d MMM yyyy");
+  const absolute = formatDateOnly(date, "d MMM yyyy");
   const relative = getRelativeDayLabel(date);
-  // Capitalize relative label for display: today → Today
   const relativeLabel = relative.charAt(0).toUpperCase() + relative.slice(1);
   return `${absolute} (${relativeLabel})`;
 }
@@ -66,7 +59,7 @@ export function PlansTable({ plans }: { plans: (Plan & { tasks: Task[] })[] }) {
         </thead>
         <tbody>
           {plans.map((plan) => {
-            const { total, done, progress } = planStats(plan.tasks);
+            const { total, done, progress } = planProgress(plan.tasks);
             return (
               <tr
                 key={plan.id}

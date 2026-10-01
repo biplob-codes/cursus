@@ -1,20 +1,19 @@
 "use server";
 
-import { prisma } from "@/lib/prisma";
 import { revalidatePath } from "next/cache";
-import { headers } from "next/headers";
-import { auth } from "@/lib/auth";
+import { prisma } from "@/lib/prisma";
+import { getSessionUser } from "@/lib/session";
 
 export async function toggleTaskDone(taskId: string, done: boolean) {
-  const session = await auth.api.getSession({ headers: await headers() });
-  if (!session?.user?.id) {
+  const user = await getSessionUser();
+  if (!user?.id) {
     throw new Error("Unauthorized");
   }
 
   const task = await prisma.task.findFirst({
     where: {
       id: taskId,
-      plan: { userId: session.user.id },
+      plan: { userId: user.id },
     },
     select: { id: true, planId: true },
   });

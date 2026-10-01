@@ -1,13 +1,11 @@
-// app/(app)/plans/page.tsx
-import { prisma } from "@/lib/prisma";
-import { Button } from "@/ui/button";
 import Link from "next/link";
-import { startOfDay } from "date-fns";
+import { prisma } from "@/lib/prisma";
+import { todayDateOnly } from "@/lib/date";
 import { requireUser } from "@/lib/session";
 import { TodaysPlansSection } from "@/components/todays-plan";
-import { PlansTable } from "./plans-table";
+import { Button } from "@/ui/button";
 import { Pagination } from "@/ui/pagination";
-import { todayDateOnly } from "@/lib/date";
+import { PlansTable } from "./plans-table";
 
 const PAGE_SIZE = 7;
 
@@ -74,9 +72,6 @@ export default async function PlansPage({ searchParams }: PlansPageProps) {
           <TodaysPlansSection plans={todayPlans} />
 
           <section className="space-y-1">
-            <h2 className="px-2 text-xs font-medium uppercase tracking-wide text-muted-foreground">
-              All plans
-            </h2>
             <PlansTable plans={otherPlans} />
             <Pagination page={page} totalPages={totalPages} basePath="/plans" />
           </section>

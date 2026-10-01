@@ -1,10 +1,9 @@
-import { notFound, redirect } from "next/navigation";
-import { format } from "date-fns";
-import { headers } from "next/headers";
-import { Task } from "@/generated/prisma/client";
+import { notFound } from "next/navigation";
+import type { Task } from "@/generated/prisma/client";
+import { formatDateOnly, getRelativeDayLabel } from "@/lib/date";
+import { planProgress } from "@/lib/plan";
 import { prisma } from "@/lib/prisma";
-import { auth } from "@/lib/auth";
-import { getRelativeDayLabel } from "@/lib/date";
+import { requireUser } from "@/lib/session";
 import { TaskRow } from "./task-row";
 
 const priorityRank: Record<Task["priority"], number> = {
@@ -18,13 +17,11 @@ export default async function PlanDetailPage({
 }: {
   params: Promise<{ id: string }>;
 }) {
-  const session = await auth.api.getSession({ headers: await headers() });
-  if (!session?.user?.id) redirect("/signin");
-
+  const user = await requireUser();
   const { id } = await params;
 
   const plan = await prisma.plan.findFirst({
-    where: { id, userId: session.user.id },
+    where: { id, userId: user.id },
     include: { tasks: true },
   });
 
@@ -37,9 +34,7 @@ export default async function PlanDetailPage({
     return priorityRank[a.priority] - priorityRank[b.priority];
   });
 
-  const total = tasks.length;
-  const doneCount = tasks.filter((t) => t.status === "DONE").length;
-  const progress = total === 0 ? 0 : Math.round((doneCount / total) * 100);
+  const { total, done, progress } = planProgress(tasks);
   const relative = getRelativeDayLabel(plan.date);
   const relativeLabel = relative.charAt(0).toUpperCase() + relative.slice(1);
 
@@ -48,7 +43,7 @@ export default async function PlanDetailPage({
       <div className="space-y-4">
         <div className="flex items-center justify-between">
           <h1 className="text-2xl font-semibold tracking-tight text-foreground">
-            {format(plan.date, "d MMMM yyyy")}
+            {formatDateOnly(plan.date)}
             <span className="ml-2 font-normal text-muted-foreground">
               ({relativeLabel})
             </span>
@@ -56,7 +51,7 @@ export default async function PlanDetailPage({
 
           {total > 0 && (
             <span className="shrink-0 text-sm tabular-nums text-muted-foreground">
-              {doneCount}/{total}
+              {done}/{total}
               <span className="ml-1 text-muted-foreground/70">
                 ({progress}%)
               </span>
