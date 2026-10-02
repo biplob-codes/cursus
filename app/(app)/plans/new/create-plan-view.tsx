@@ -178,7 +178,7 @@ export function CreatePlanView() {
         <div
           className={cn(
             "space-y-6 transition-[max-width] duration-300 ease-out",
-            panelEntered ? "max-w-none" : "mx-auto max-w-2xl",
+            panelEntered ? "max-w-none" : "mx-auto max-w-4xl",
           )}
         >
           <form action={formAction} className="space-y-6">
