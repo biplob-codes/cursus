@@ -1,4 +1,3 @@
-// app/(app)/notes/note-visibility-toggle.tsx
 "use client";
 
 import { useState, useTransition } from "react";
@@ -44,10 +43,6 @@ export function NoteVisibilityToggle({ noteId, isPublic }: Props) {
         setPublicState(true);
         toast("Note is now public. Anyone with the link can view it.", {
           icon: <Globe className="size-4" strokeWidth={1.8} />,
-          link: {
-            label: "Open",
-            href: `/notes/${noteId}`,
-          },
         });
       }
     });
