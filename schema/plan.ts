@@ -15,7 +15,7 @@ export const createPlanWithTasksSchema = z.object({
     .nullable()
     .optional()
     .transform((value) => (value === "" || value === null ? undefined : value)),
-  tasks: z.array(taskInputSchema).default([]),
+  tasks: z.array(taskInputSchema).min(1, "Add at least one task"),
 });
 
 export type CreatePlanWithTasksInput = z.infer<

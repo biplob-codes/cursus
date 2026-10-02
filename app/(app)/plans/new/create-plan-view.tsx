@@ -10,9 +10,10 @@ import { TaskInput, taskInputSchema } from "@/schema/task";
 import { createPlanWithTasks } from "@/actions/plan";
 import { initialActionState } from "@/actions/action-state";
 import { Button } from "@/ui/button";
-import { useAppChrome } from "@/app/app-chrome-context";
+
 import { cn } from "@/lib/utils";
 import { addDays, format } from "date-fns";
+import { useAppChrome } from "@/components/app-chrome-context";
 
 const emptyDraft = {
   title: "",
