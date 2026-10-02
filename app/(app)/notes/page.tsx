@@ -6,8 +6,10 @@ import { NotesToolbar } from "./notes-toolbar";
 import { NotesTable } from "./notes-table";
 import type { Prisma } from "@/generated/prisma/client";
 
+const PAGE_SIZE = 10;
+
 type NotesPageProps = {
-  searchParams: Promise<{ q?: string; tags?: string }>;
+  searchParams: Promise<{ q?: string; tags?: string; page?: string }>;
 };
 
 export default async function NotesPage({ searchParams }: NotesPageProps) {
@@ -20,6 +22,7 @@ export default async function NotesPage({ searchParams }: NotesPageProps) {
     .split(",")
     .map((id) => id.trim())
     .filter(Boolean);
+  const requestedPage = Math.max(1, Number(params.page) || 1);
 
   const where: Prisma.NoteWhereInput = {
     userId,
@@ -33,23 +36,31 @@ export default async function NotesPage({ searchParams }: NotesPageProps) {
       : {}),
   };
 
-  const [notes, tags] = await Promise.all([
-    prisma.note.findMany({
-      where,
-      orderBy: { updatedAt: "desc" },
-      select: {
-        id: true,
-        title: true,
-        isPublic: true,
-        updatedAt: true,
-      },
-    }),
+  const [totalNotes, tags] = await Promise.all([
+    prisma.note.count({ where }),
     prisma.tag.findMany({
       where: { userId },
       orderBy: { name: "asc" },
       select: { id: true, name: true },
     }),
   ]);
+
+  const totalPages = Math.max(1, Math.ceil(totalNotes / PAGE_SIZE));
+  const page = Math.min(requestedPage, totalPages);
+  const skip = (page - 1) * PAGE_SIZE;
+
+  const notes = await prisma.note.findMany({
+    where,
+    orderBy: { updatedAt: "desc" },
+    skip,
+    take: PAGE_SIZE,
+    select: {
+      id: true,
+      title: true,
+      isPublic: true,
+      updatedAt: true,
+    },
+  });
 
   const hasFilters = query.length > 0 || selectedTagIds.length > 0;
 
@@ -63,7 +74,7 @@ export default async function NotesPage({ searchParams }: NotesPageProps) {
         />
       </div>
 
-      {notes.length === 0 ? (
+      {totalNotes === 0 ? (
         <p className="px-2 pt-2 text-sm text-muted-foreground">
           {hasFilters ? (
             <>No notes match these filters.</>
