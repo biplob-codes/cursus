@@ -1,13 +1,12 @@
-// app/(app)/notes/notes-toolbar.tsx
 "use client";
 
-import Link from "next/link";
-import { useRouter, usePathname, useSearchParams } from "next/navigation";
-import { useCallback, useEffect, useRef, useState, useTransition } from "react";
-import { Search, ListFilter, X, Check } from "lucide-react";
+import { cn } from "@/lib/utils";
 import { Button } from "@/ui/button";
 import { Popover, PopoverContent, PopoverTrigger } from "@/ui/popover";
-import { cn } from "@/lib/utils";
+import { Check, Search, SlidersVertical, X } from "lucide-react";
+import Link from "next/link";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
+import { useCallback, useEffect, useRef, useState, useTransition } from "react";
 
 export type TagOption = { id: string; name: string };
 
@@ -64,6 +63,9 @@ export function NotesToolbar({
         else params.delete("tags");
       }
 
+      // Filter change → always start from page 1
+      params.delete("page");
+
       const qs = params.toString();
       startTransition(() => {
         router.push(qs ? `${pathname}?${qs}` : pathname);
@@ -71,7 +73,6 @@ export function NotesToolbar({
     },
     [pathname, router, searchParams],
   );
-
   function openSearch() {
     setSearchOpen(true);
   }
@@ -193,7 +194,7 @@ export function NotesToolbar({
               hasTagFilter && "text-foreground",
             )}
           >
-            <ListFilter className="size-4" strokeWidth={1.8} />
+            <SlidersVertical className="size-4" strokeWidth={1.8} />
           </PopoverTrigger>
           <PopoverContent align="end" className="w-56 p-1.5">
             {tags.length === 0 ? (
