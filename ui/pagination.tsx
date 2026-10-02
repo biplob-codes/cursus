@@ -8,16 +8,35 @@ type PaginationProps = {
   /** Total number of pages */
   totalPages: number;
   /**
-   * Base path without query, e.g. "/plans"
-   * Links will be built as `${basePath}?page=N`
+   * Base path without query, e.g. "/plans" or "/notes"
    */
   basePath: string;
+  /**
+   * Extra query params to preserve across page links (e.g. q, tags).
+   * The `page` key is managed by this component and will be overwritten.
+   */
+  searchParams?: Record<string, string | undefined>;
   className?: string;
 };
 
-function pageHref(basePath: string, page: number) {
-  if (page <= 1) return basePath;
-  return `${basePath}?page=${page}`;
+function pageHref(
+  basePath: string,
+  page: number,
+  searchParams?: Record<string, string | undefined>,
+) {
+  const params = new URLSearchParams();
+
+  if (searchParams) {
+    for (const [key, value] of Object.entries(searchParams)) {
+      if (value) params.set(key, value);
+    }
+  }
+
+  if (page > 1) params.set("page", String(page));
+  else params.delete("page");
+
+  const qs = params.toString();
+  return qs ? `${basePath}?${qs}` : basePath;
 }
 
 /** Build a compact page list: 1 … 4 5 6 … 12 */
@@ -65,6 +84,7 @@ export function Pagination({
   page,
   totalPages,
   basePath,
+  searchParams,
   className,
 }: PaginationProps) {
   if (totalPages <= 1) return null;
@@ -81,7 +101,7 @@ export function Pagination({
       {/* Previous */}
       {hasPrev ? (
         <Link
-          href={pageHref(basePath, page - 1)}
+          href={pageHref(basePath, page - 1, searchParams)}
           className={cn(
             "inline-flex h-7 w-7 items-center justify-center rounded-md",
             "text-muted-foreground transition-colors",
@@ -118,7 +138,7 @@ export function Pagination({
         return (
           <Link
             key={item}
-            href={pageHref(basePath, item)}
+            href={pageHref(basePath, item, searchParams)}
             aria-current={isActive ? "page" : undefined}
             className={cn(
               "inline-flex h-7 min-w-7 items-center justify-center rounded-md px-1.5 text-xs tabular-nums transition-colors",
@@ -135,7 +155,7 @@ export function Pagination({
       {/* Next */}
       {hasNext ? (
         <Link
-          href={pageHref(basePath, page + 1)}
+          href={pageHref(basePath, page + 1, searchParams)}
           className={cn(
             "inline-flex h-7 w-7 items-center justify-center rounded-md",
             "text-muted-foreground transition-colors",

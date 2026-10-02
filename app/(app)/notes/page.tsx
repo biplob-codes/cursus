@@ -5,6 +5,7 @@ import { requireUser } from "@/lib/session";
 import { NotesToolbar } from "./notes-toolbar";
 import { NotesTable } from "./notes-table";
 import type { Prisma } from "@/generated/prisma/client";
+import { Pagination } from "@/ui/pagination";
 
 const PAGE_SIZE = 10;
 
@@ -91,7 +92,21 @@ export default async function NotesPage({ searchParams }: NotesPageProps) {
           )}
         </p>
       ) : (
-        <NotesTable notes={notes} />
+        <>
+          <NotesTable notes={notes} />
+          <Pagination
+            page={page}
+            totalPages={totalPages}
+            basePath="/notes"
+            searchParams={{
+              q: query || undefined,
+              tags:
+                selectedTagIds.length > 0
+                  ? selectedTagIds.join(",")
+                  : undefined,
+            }}
+          />
+        </>
       )}
     </div>
   );
