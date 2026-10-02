@@ -33,7 +33,7 @@ export function EditNoteForm({
   );
 
   return (
-    <form action={formAction} className="mx-auto w-full max-w-2xl space-y-6">
+    <form action={formAction} className="mx-auto w-full max-w-4xl space-y-6">
       <Link
         href={`/notes/${note.id}`}
         className="inline-flex items-center gap-1.5 text-sm text-muted-foreground transition-colors hover:text-foreground"
@@ -43,13 +43,30 @@ export function EditNoteForm({
       </Link>
 
       <div className="space-y-1">
-        <input
+        <textarea
           name="title"
           value={title}
-          onChange={(e) => setTitle(e.target.value)}
+          onChange={(e) => {
+            setTitle(e.target.value);
+            const el = e.target;
+            el.style.height = "auto";
+            el.style.height = `${el.scrollHeight}px`;
+          }}
+          onKeyDown={(e) => {
+            if (e.key === "Enter") {
+              e.preventDefault();
+            }
+          }}
+          ref={(el) => {
+            if (el) {
+              el.style.height = "auto";
+              el.style.height = `${el.scrollHeight}px`;
+            }
+          }}
           placeholder="Untitled"
+          rows={1}
           autoFocus
-          className="w-full bg-transparent text-3xl font-semibold tracking-tight text-foreground outline-none placeholder:text-muted-foreground/35"
+          className="w-full resize-none overflow-hidden bg-transparent text-3xl font-semibold tracking-tight text-foreground outline-none placeholder:text-muted-foreground/35"
         />
         {state.errors?.title && (
           <p className="text-xs text-destructive">{state.errors.title[0]}</p>
@@ -96,16 +113,16 @@ export function EditNoteForm({
         value={JSON.stringify(newNames)}
       />
 
-      <div className="flex items-center gap-3 pt-2">
-        <Button type="submit" disabled={isPending || !title.trim()}>
-          {isPending ? "Saving…" : "Save"}
-        </Button>
+      <div className="flex items-center gap-3 pt-2 justify-end">
         <Link
           href={`/notes/${note.id}`}
           className="text-sm text-muted-foreground hover:text-foreground"
         >
           Cancel
-        </Link>
+        </Link>{" "}
+        <Button type="submit" disabled={isPending || !title.trim()}>
+          {isPending ? "Saving…" : "Save"}
+        </Button>
         {state.status === "error" && !state.errors && (
           <p className="text-xs text-destructive">{state.message}</p>
         )}

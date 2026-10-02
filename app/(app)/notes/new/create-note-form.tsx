@@ -23,16 +23,34 @@ export function CreateNoteForm({
   );
 
   return (
-    <form action={formAction} className="mx-auto w-full max-w-2xl space-y-6">
-      {/* Title — large, no chrome */}
+    <form action={formAction} className="mx-auto w-full max-w-4xl space-y-6">
+      {/* Title — large, wraps, auto-grows */}
       <div className="space-y-1">
-        <input
+        <textarea
           name="title"
           value={title}
-          onChange={(e) => setTitle(e.target.value)}
+          onChange={(e) => {
+            setTitle(e.target.value);
+            const el = e.target;
+            el.style.height = "auto";
+            el.style.height = `${el.scrollHeight}px`;
+          }}
+          onKeyDown={(e) => {
+            // Enter moves focus to body (Notion-like), not a newline in the title
+            if (e.key === "Enter") {
+              e.preventDefault();
+            }
+          }}
+          ref={(el) => {
+            if (el) {
+              el.style.height = "auto";
+              el.style.height = `${el.scrollHeight}px`;
+            }
+          }}
           placeholder="Untitled"
+          rows={1}
           autoFocus
-          className="w-full bg-transparent text-3xl font-semibold tracking-tight text-foreground outline-none placeholder:text-muted-foreground/35"
+          className="w-full resize-none overflow-hidden bg-transparent text-3xl font-semibold tracking-tight text-foreground outline-none placeholder:text-muted-foreground/35"
         />
         {state.errors?.title && (
           <p className="text-xs text-destructive">{state.errors.title[0]}</p>
@@ -80,7 +98,7 @@ export function CreateNoteForm({
         value={JSON.stringify(newNames)}
       />
 
-      <div className="flex items-center gap-3 pt-2">
+      <div className="flex items-center gap-3 pt-2 justify-end">
         <Button type="submit" disabled={isPending || !title.trim()}>
           {isPending ? "Creating…" : "Create note"}
         </Button>
