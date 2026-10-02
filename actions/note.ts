@@ -6,7 +6,7 @@ import { ActionState } from "./action-state";
 import { createNoteSchema, updateNoteSchema } from "@/schema/note";
 import { prisma } from "@/lib/prisma";
 import { getSessionUser } from "@/lib/session";
-
+import { nanoid } from "nanoid";
 async function resolveTagIds(
   userId: string,
   existingTagIds: string[],
@@ -219,10 +219,7 @@ export async function updateNote(
 }
 
 function generateShareToken() {
-  // 24-char URL-safe token
-  const bytes = new Uint8Array(18);
-  crypto.getRandomValues(bytes);
-  return Buffer.from(bytes).toString("base64url");
+  return nanoid(12);
 }
 
 export async function enableNoteShare(
