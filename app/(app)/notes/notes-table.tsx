@@ -19,23 +19,23 @@ export function NotesTable({ notes }: { notes: NotesTableRow[] }) {
   }
 
   return (
-    <div className="w-full overflow-x-auto">
-      <table className="w-full min-w-[560px] border-collapse text-sm">
+    <div className="w-full overflow-x-auto mt-5 mb-2">
+      <table className="w-full min-w-[560px] table-fixed border-collapse text-sm">
         <thead>
           <tr className="border-b border-border">
-            <th className="px-2 py-2 text-left">
+            <th className="w-auto px-2 py-2 text-left">
               <span className="inline-flex items-center gap-1.5 text-xs font-medium text-muted-foreground">
                 <FileText className="h-3.5 w-3.5" strokeWidth={1.8} />
                 Title
               </span>
             </th>
-            <th className="px-2 py-2 text-left">
+            <th className="w-28 px-2 py-2 text-left">
               <span className="inline-flex items-center gap-1.5 text-xs font-medium text-muted-foreground">
                 <Shield className="h-3.5 w-3.5" strokeWidth={1.8} />
                 Status
               </span>
             </th>
-            <th className="px-2 py-2 text-left">
+            <th className="w-36 px-2 py-2 text-left">
               <span className="inline-flex items-center gap-1.5 text-xs font-medium text-muted-foreground">
                 <Clock className="h-3.5 w-3.5" strokeWidth={1.8} />
                 Last edited
@@ -49,10 +49,11 @@ export function NotesTable({ notes }: { notes: NotesTableRow[] }) {
               key={note.id}
               className="border-b border-border/70 hover:bg-muted/50"
             >
-              <td className="px-2 py-2">
+              <td className="max-w-0 px-2 py-2">
                 <Link
                   href={`/notes/${note.id}`}
-                  className="block min-w-0 truncate font-medium text-foreground hover:underline"
+                  title={note.title}
+                  className="block truncate font-medium text-foreground hover:underline"
                 >
                   {note.title}
                 </Link>
