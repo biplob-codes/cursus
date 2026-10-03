@@ -1,6 +1,4 @@
 import { AppShell } from "@/components/app-shell";
-import Home from "../home";
-
 import { getSession } from "@/lib/session";
 
 export default async function AppLayout({
@@ -9,6 +7,12 @@ export default async function AppLayout({
   children: React.ReactNode;
 }) {
   const session = await getSession();
-  if (!session?.user) return <Home />;
+
+  // Only wrap with the app shell when the user is logged in.
+  // Unauthenticated users just get the children (the root page will show marketing).
+  if (!session?.user) {
+    return <>{children}</>;
+  }
+
   return <AppShell>{children}</AppShell>;
 }

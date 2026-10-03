@@ -3,10 +3,18 @@ import { TodaysPlansSection } from "@/components/todays-plan";
 import { getActivityData } from "@/lib/activity";
 import { todayDateOnly } from "@/lib/date";
 import { prisma } from "@/lib/prisma";
-import { requireUser } from "@/lib/session";
+import { getSession } from "@/lib/session";
+import Home from "../home";
 
 export default async function HomePage() {
-  const user = await requireUser();
+  const session = await getSession();
+
+  // Unauthenticated → marketing page at the correct URL (/)
+  if (!session?.user) {
+    return <Home />;
+  }
+
+  const user = session.user;
   const today = todayDateOnly();
   const [todayPlans, activity] = await Promise.all([
     prisma.plan.findMany({
