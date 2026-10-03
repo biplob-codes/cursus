@@ -4,8 +4,8 @@ import { Button } from "@/ui/button";
 import {
   ArrowRight,
   CheckSquare,
-  FileText,
   ListChecks,
+  Share2,
   Sparkles,
 } from "lucide-react";
 import { GithubIcon } from "@/components/github-icon";
@@ -76,14 +76,13 @@ function Hero() {
         A personal productivity tool, built in the open
       </p>
       <h1 className="mt-3 text-[2.5rem] font-semibold leading-[1.15] tracking-tight sm:text-6xl sm:leading-[1.1]">
-        One place for everything
+        Plan your day.
         <br />
-        you're keeping track of.
+        Share what matters.
       </h1>
       <p className="mx-auto mt-5 max-w-xl text-base leading-relaxed text-neutral-500 dark:text-neutral-400 sm:text-lg">
-        Cursus started as a way to manage daily routines while juggling
-        university and a self-taught roadmap. New tools get added as new
-        problems show up. If it's useful to you too, use it.
+        Create daily plans you actually execute, track progress over time, and
+        write notes you can keep private or share with a single link.
       </p>
       <div className="mt-8 flex flex-wrap items-center justify-center gap-3">
         <Link href="/signup">
@@ -114,11 +113,11 @@ function Hero() {
 /* ------------------------------ Product preview ------------------------------ */
 
 function ProductPreview() {
-  const routine = [
+  const tasks = [
     { label: "Morning workout", done: true },
     { label: "Review yesterday's PRs", done: true },
     { label: "Read 20 pages", done: false },
-    { label: "Plan tomorrow's routine", done: false },
+    { label: "Write notes for ML study", done: false },
   ];
 
   return (
@@ -138,7 +137,7 @@ function ProductPreview() {
               Workspace
             </p>
             <div className="mt-2 space-y-0.5">
-              {["Today's routine", "Documents", "Notes"].map((item, i) => (
+              {["Daily plans", "Notes"].map((item, i) => (
                 <div
                   key={item}
                   className={`rounded-md px-2 py-1.5 text-sm ${
@@ -155,12 +154,12 @@ function ProductPreview() {
 
           {/* content */}
           <div className="p-6 sm:p-8">
-            <h3 className="text-lg font-semibold">Today's routine</h3>
+            <h3 className="text-lg font-semibold">Today&apos;s plan</h3>
             <p className="mt-1 text-sm text-neutral-500 dark:text-neutral-400">
               Thursday, September 24
             </p>
             <ul className="mt-5 space-y-2.5">
-              {routine.map((item) => (
+              {tasks.map((item) => (
                 <li key={item.label} className="flex items-center gap-2.5">
                   <CheckSquare
                     className={`h-4 w-4 shrink-0 ${
@@ -194,21 +193,21 @@ function Features() {
   const features = [
     {
       icon: ListChecks,
-      title: "Routines",
+      title: "Daily plans",
       description:
-        "Set up what you do every day and check it off as you go. Cursus keeps score so you don't have to.",
+        "Create a plan for the day, add tasks with priority, and check them off as you go. An activity graph quietly shows how consistent you’ve been.",
     },
     {
-      icon: FileText,
-      title: "Documents",
+      icon: Share2,
+      title: "Shareable notes",
       description:
-        "Keep the PDFs and files you actually use in one organized place instead of scattered across folders.",
+        "Write notes with a clean editor, keep them private by default, then flip one public and share a short link when you want others to see it.",
     },
     {
       icon: Sparkles,
-      title: "Whatever's next",
+      title: "Built as needed",
       description:
-        "New features get added as new problems show up — this list will keep growing.",
+        "New tools appear only when a real gap shows up. No bloated feature set — just the pieces that actually help.",
     },
   ];
 
