@@ -71,7 +71,7 @@
     @apply font-sans h-full;
   }
   body {
-    @apply bg-background text-foreground text-[14px] h-full overflow-hidden;
+    @apply bg-background text-foreground text-[14px] h-full;
   }
 }
 
