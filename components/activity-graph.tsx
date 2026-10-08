@@ -1,6 +1,8 @@
+"use client";
+
+import { useEffect, useMemo, useRef, useState } from "react";
 import { format, parseISO, getDay } from "date-fns";
 import { cn } from "@/lib/utils";
-import { LEVEL_LABEL } from "@/lib/activity";
 import type { DayActivity, ActivityLevel } from "@/lib/activity";
 
 const LEVEL_CLASS: Record<ActivityLevel, string> = {
@@ -11,8 +13,21 @@ const LEVEL_CLASS: Record<ActivityLevel, string> = {
   4: "bg-green-500",
 };
 
+const LEVEL_LABEL: Record<ActivityLevel, string> = {
+  0: "No plan",
+  1: "0–25%",
+  2: "26–50%",
+  3: "51–75%",
+  4: "76–100%",
+};
+
 const WEEKDAY_LABELS = ["", "Mon", "", "Wed", "", "Fri", ""];
 const LEVELS: ActivityLevel[] = [0, 1, 2, 3, 4];
+
+/** Minimum pixel size for a day cell before we drop older weeks */
+const MIN_CELL_PX = 11;
+const GAP_PX = 3;
+const LABEL_COL_PX = 28;
 
 function dayTitle(day: DayActivity): string {
   const date = format(parseISO(day.date), "MMM d, yyyy");
@@ -26,24 +41,51 @@ type ActivityGraphProps = {
 };
 
 export function ActivityGraph({ data, className }: ActivityGraphProps) {
-  if (data.length === 0) return null;
+  const containerRef = useRef<HTMLDivElement>(null);
+  const [width, setWidth] = useState(0);
 
-  const totalDone = data.reduce((sum, d) => sum + d.done, 0);
+  useEffect(() => {
+    const el = containerRef.current;
+    if (!el) return;
 
-  // Each day gets an explicit grid position: column = week, row = weekday (Sun = 0)
-  const firstWeekday = getDay(parseISO(data[0].date));
-  const weekCount = Math.ceil((firstWeekday + data.length) / 7);
+    const ro = new ResizeObserver(([entry]) => {
+      setWidth(entry.contentRect.width);
+    });
+    ro.observe(el);
+    setWidth(el.clientWidth);
 
-  const positioned = data.map((day, i) => {
+    return () => ro.disconnect();
+  }, []);
+
+  const maxWeeks = useMemo(() => {
+    if (width <= 0) return 5; // ~1 month on first paint
+    const available = Math.max(0, width - LABEL_COL_PX);
+    const weekWidth = MIN_CELL_PX + GAP_PX;
+    return Math.max(4, Math.floor(available / weekWidth));
+  }, [width]);
+
+  const visible = useMemo(() => {
+    if (data.length === 0) return [];
+    const maxDays = maxWeeks * 7;
+    return data.slice(-maxDays);
+  }, [data, maxWeeks]);
+
+  if (visible.length === 0) return null;
+
+  const totalDone = visible.reduce((sum, d) => sum + d.done, 0);
+
+  const firstWeekday = getDay(parseISO(visible[0].date));
+  const weekCount = Math.ceil((firstWeekday + visible.length) / 7);
+
+  const positioned = visible.map((day, i) => {
     const offset = firstWeekday + i;
     return {
       day,
-      col: Math.floor(offset / 7) + 2, // +1 for 1-based, +1 for label column
-      row: (offset % 7) + 2, // +1 for 1-based, +1 for month label row
+      col: Math.floor(offset / 7) + 2,
+      row: (offset % 7) + 2,
     };
   });
 
-  // Month labels: one per month, placed at the column where the month first appears
   const rawLabels: { col: number; label: string }[] = [];
   let lastMonth = "";
   for (const { day, col } of positioned) {
@@ -62,19 +104,20 @@ export function ActivityGraph({ data, className }: ActivityGraphProps) {
     <div className={cn("space-y-2", className)}>
       <p className="my-2 text-foreground">
         <span className="font-semibold">{totalDone}</span>{" "}
-        {totalDone === 1 ? "task" : "tasks"} completed in the last {data.length}{" "}
-        days
+        {totalDone === 1 ? "task" : "tasks"} completed in the last{" "}
+        {visible.length} days
       </p>
 
-      <div className="space-y-3 rounded-lg border border-border p-4">
-        {/* Full year fits the container — no horizontal scroll (GitHub-style). */}
+      <div
+        ref={containerRef}
+        className="space-y-3 rounded-lg border border-border p-3 sm:p-4"
+      >
         <div
           className="grid w-full gap-[3px]"
           style={{
             gridTemplateColumns: `auto repeat(${weekCount}, minmax(0, 1fr))`,
           }}
         >
-          {/* Month labels (row 1) */}
           {monthLabels.map(({ col, label }) => (
             <div
               key={`${label}-${col}`}
@@ -85,7 +128,6 @@ export function ActivityGraph({ data, className }: ActivityGraphProps) {
             </div>
           ))}
 
-          {/* Weekday labels (column 1) */}
           {WEEKDAY_LABELS.map((label, i) => (
             <div
               key={i}
@@ -96,7 +138,6 @@ export function ActivityGraph({ data, className }: ActivityGraphProps) {
             </div>
           ))}
 
-          {/* Day cells — square via aspect-ratio, shrink with column width */}
           {positioned.map(({ day, col, row }) => (
             <div
               key={day.date}
@@ -110,8 +151,7 @@ export function ActivityGraph({ data, className }: ActivityGraphProps) {
           ))}
         </div>
 
-        {/* Legend */}
-        <div className="flex flex-wrap items-center justify-end gap-x-4 gap-y-1.5 text-[11px] text-muted-foreground">
+        <div className="flex flex-wrap items-center justify-start gap-x-3 gap-y-1.5 text-[11px] text-muted-foreground sm:justify-end sm:gap-x-4">
           {LEVELS.map((level) => (
             <div key={level} className="flex items-center gap-1.5">
               <div
