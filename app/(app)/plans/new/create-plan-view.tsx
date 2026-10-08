@@ -171,14 +171,17 @@ export function CreatePlanView() {
       {/* Main form column */}
       <div
         className={cn(
-          "min-w-0 transition-[width] duration-300 ease-out",
-          panelEntered ? "w-1/2 overflow-y-auto px-10 py-12" : "w-full",
+          "min-w-0 flex-1 overflow-y-auto transition-[width] duration-300 ease-out",
+          // Desktop: shrink when side panel is open
+          panelEntered ? "md:w-1/2 md:px-10 md:py-12" : "w-full",
+          // Mobile padding always
+          "px-4 py-6 sm:px-6",
         )}
       >
         <div
           className={cn(
             "space-y-6 transition-[max-width] duration-300 ease-out",
-            panelEntered ? "max-w-none" : "mx-auto max-w-4xl",
+            panelEntered ? "md:max-w-none" : "mx-auto max-w-4xl",
           )}
         >
           <form action={formAction} className="space-y-6">
@@ -231,7 +234,11 @@ export function CreatePlanView() {
             />
 
             <div className="flex items-center gap-3 pt-2">
-              <Button type="submit" disabled={isPending}>
+              <Button
+                type="submit"
+                disabled={isPending}
+                className="w-full sm:w-auto"
+              >
                 {isPending ? "Creating…" : "Create plan"}
               </Button>
               {state.status === "error" && !state.errors && (
@@ -245,10 +252,10 @@ export function CreatePlanView() {
         </div>
       </div>
 
-      {/* Right task panel — slides in from the right */}
+      {/* Desktop: right side panel */}
       <div
         className={cn(
-          "shrink-0 overflow-hidden transition-[width] duration-300 ease-out",
+          "hidden shrink-0 overflow-hidden transition-[width] duration-300 ease-out md:block",
           panelEntered ? "w-1/2" : "w-0",
         )}
       >
@@ -265,6 +272,49 @@ export function CreatePlanView() {
               errors={errors}
               onChange={(patch) => setDraft((prev) => ({ ...prev, ...patch }))}
               onClose={handleClosePanel}
+              variant="side"
+            />
+          )}
+        </div>
+      </div>
+
+      {/* Mobile: bottom sheet */}
+      <div
+        className={cn(
+          "fixed inset-0 z-50 md:hidden",
+          panelMounted ? "pointer-events-auto" : "pointer-events-none",
+        )}
+      >
+        {/* Backdrop */}
+        <div
+          className={cn(
+            "absolute inset-0 bg-black/40 transition-opacity duration-300",
+            panelEntered ? "opacity-100" : "opacity-0",
+          )}
+          onClick={handleClosePanel}
+          aria-hidden
+        />
+
+        {/* Sheet */}
+        <div
+          className={cn(
+            "absolute inset-x-0 bottom-0 flex max-h-[90vh] flex-col rounded-t-2xl bg-background shadow-xl transition-transform duration-300 ease-out",
+            panelEntered ? "translate-y-0" : "translate-y-full",
+          )}
+        >
+          {/* Handle */}
+          <div className="flex shrink-0 justify-center pt-3 pb-1">
+            <div className="h-1 w-10 rounded-full bg-border" />
+          </div>
+
+          {panelMounted && (
+            <TaskEditorPanel
+              key={editorKey}
+              draft={draft}
+              errors={errors}
+              onChange={(patch) => setDraft((prev) => ({ ...prev, ...patch }))}
+              onClose={handleClosePanel}
+              variant="sheet"
             />
           )}
         </div>

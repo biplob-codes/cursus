@@ -63,11 +63,13 @@ export function TaskEditorPanel({
   errors,
   onChange,
   onClose,
+  variant = "side",
 }: {
   draft: Draft;
   errors: FieldErrors;
   onChange: (patch: Partial<Draft>) => void;
   onClose: () => void;
+  variant?: "side" | "sheet";
 }) {
   const activeStatus =
     statusOptions.find((o) => o.value === draft.status) ?? statusOptions[0];
@@ -76,8 +78,19 @@ export function TaskEditorPanel({
     priorityOptions[1];
 
   return (
-    <aside className="flex h-full w-full flex-col border-l border-border bg-muted/40">
-      <div className="flex items-center justify-end px-6 py-4">
+    <aside
+      className={cn(
+        "flex h-full w-full flex-col bg-muted/40",
+        variant === "side" && "border-l border-border",
+        variant === "sheet" && "min-h-0 rounded-t-2xl",
+      )}
+    >
+      <div
+        className={cn(
+          "flex items-center justify-end",
+          variant === "side" ? "px-6 py-4" : "px-4 py-2",
+        )}
+      >
         <button
           type="button"
           onClick={onClose}
@@ -88,7 +101,12 @@ export function TaskEditorPanel({
         </button>
       </div>
 
-      <div className="flex flex-1 flex-col gap-6 overflow-y-auto px-6 pb-10">
+      <div
+        className={cn(
+          "flex flex-1 flex-col gap-6 overflow-y-auto pb-10",
+          variant === "side" ? "px-6" : "px-4",
+        )}
+      >
         <div>
           <input
             autoFocus

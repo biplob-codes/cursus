@@ -17,7 +17,7 @@ export function PlanHeader({ date, onDateChange }: PlanHeaderProps) {
   const [open, setOpen] = useState(false);
   return (
     <div className="flex items-center justify-between gap-4">
-      <h1 className="text-2xl font-semibold tracking-tight text-foreground">
+      <h1 className="text-lg md:text-2xl font-semibold tracking-tight text-foreground">
         Create a plan for {getRelativeDayLabel(date)}{" "}
         <span className="font-normal text-muted-foreground">
           ({format(date, "d MMMM yyyy")})
