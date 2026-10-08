@@ -128,11 +128,11 @@ export function NotesToolbar({
   return (
     <div
       className={cn(
-        "flex items-center justify-between gap-3",
+        "flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between",
         isPending && "opacity-60",
       )}
     >
-      <h1 className="shrink-0 text-2xl font-semibold tracking-tight text-foreground">
+      <h1 className="shrink-0 text-xl font-semibold tracking-tight text-foreground sm:text-2xl">
         Notes
       </h1>
 
