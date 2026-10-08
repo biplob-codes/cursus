@@ -7,6 +7,7 @@ import { NotesIcon } from "@/icons/notes";
 import { useSession } from "@/lib/auth-client";
 import { cn } from "@/lib/utils";
 import { UserAvatar } from "@/components/user-avatar";
+import { useAppChrome } from "./app-chrome-context";
 
 const navItems = [
   { label: "Daily plans", href: "/plans", icon: DailyPlansIcon },
@@ -17,10 +18,11 @@ export default function Sidebar() {
   const pathname = usePathname();
   const { data: session, isPending } = useSession();
   const user = session?.user;
+  const { closeMobile } = useAppChrome();
 
   return (
     <aside className="flex h-full w-60 flex-col border-r border-border bg-accent/50">
-      <Link href="/">
+      <Link href="/" onClick={closeMobile}>
         <div className="flex items-center gap-2 px-3 py-3 text-lg">
           <div className="flex h-5 w-5 items-center justify-center rounded bg-blue-500 font-semibold text-white">
             C
@@ -42,6 +44,7 @@ export default function Sidebar() {
               <Link
                 key={item.href}
                 href={item.href}
+                onClick={closeMobile}
                 className={cn(
                   "flex items-center gap-2 rounded-md px-2 py-1.5 transition-colors",
                   "hover:bg-accent hover:text-foreground",
@@ -61,6 +64,7 @@ export default function Sidebar() {
       <div className="px-2 py-3">
         <Link
           href="/profile"
+          onClick={closeMobile}
           className={cn(
             "flex items-center gap-2 rounded-md px-2 py-1.5 transition-colors",
             "hover:bg-accent hover:text-foreground",

@@ -12,7 +12,7 @@ import {
 import { usePathname } from "next/navigation";
 
 type AppChromeContextValue = {
-  /** When true, the left workspace sidebar is fully hidden. */
+  /** When true, the left workspace sidebar is fully hidden (desktop). */
   sidebarHidden: boolean;
   setSidebarHidden: (hidden: boolean) => void;
   /** Whether the right-hand task editor panel is open. */
@@ -22,6 +22,11 @@ type AppChromeContextValue = {
   openTaskPanel: () => void;
   /** Close the task panel and restore the left sidebar. */
   closeTaskPanel: () => void;
+  /** Mobile drawer open state */
+  mobileOpen: boolean;
+  setMobileOpen: (open: boolean) => void;
+  toggleMobile: () => void;
+  closeMobile: () => void;
 };
 
 const AppChromeContext = createContext<AppChromeContextValue | null>(null);
@@ -30,12 +35,14 @@ export function AppChromeProvider({ children }: { children: ReactNode }) {
   const pathname = usePathname();
   const [sidebarHidden, setSidebarHidden] = useState(false);
   const [taskPanelOpen, setTaskPanelOpen] = useState(false);
+  const [mobileOpen, setMobileOpen] = useState(false);
 
-  // Soft navigations (e.g. redirect after create) keep this provider mounted.
-  // Reset chrome whenever the route changes so the sidebar always comes back.
+  // Soft navigations keep this provider mounted.
+  // Reset chrome whenever the route changes.
   useEffect(() => {
     setTaskPanelOpen(false);
     setSidebarHidden(false);
+    setMobileOpen(false);
   }, [pathname]);
 
   const openTaskPanel = useCallback(() => {
@@ -48,6 +55,14 @@ export function AppChromeProvider({ children }: { children: ReactNode }) {
     setSidebarHidden(false);
   }, []);
 
+  const toggleMobile = useCallback(() => {
+    setMobileOpen((prev) => !prev);
+  }, []);
+
+  const closeMobile = useCallback(() => {
+    setMobileOpen(false);
+  }, []);
+
   const value = useMemo(
     () => ({
       sidebarHidden,
@@ -56,8 +71,20 @@ export function AppChromeProvider({ children }: { children: ReactNode }) {
       setTaskPanelOpen,
       openTaskPanel,
       closeTaskPanel,
+      mobileOpen,
+      setMobileOpen,
+      toggleMobile,
+      closeMobile,
     }),
-    [sidebarHidden, taskPanelOpen, openTaskPanel, closeTaskPanel],
+    [
+      sidebarHidden,
+      taskPanelOpen,
+      openTaskPanel,
+      closeTaskPanel,
+      mobileOpen,
+      toggleMobile,
+      closeMobile,
+    ],
   );
 
   return (
