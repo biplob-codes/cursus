@@ -48,11 +48,12 @@ export default async function PlansPage({ searchParams }: PlansPageProps) {
 
   return (
     <div className="mx-auto w-full max-w-4xl space-y-10">
-      <div className="flex items-center justify-between gap-4">
-        <h1 className="text-2xl font-semibold tracking-tight text-foreground">
+      {/* replace the existing header div */}
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <h1 className="text-xl font-semibold tracking-tight text-foreground sm:text-2xl">
           Plans
         </h1>
-        <Button>
+        <Button className="w-full sm:w-auto">
           <Link href="/plans/new">New plan</Link>
         </Button>
       </div>
