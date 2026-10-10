@@ -1,7 +1,6 @@
 "use client";
 
 import { ClassInput, DAY_OF_WEEK_LABELS, dayOfWeekEnum } from "@/schema/course";
-import { Button } from "@/ui/button";
 import {
   Select,
   SelectContent,
@@ -24,7 +23,6 @@ type ClassComposerPanelProps = {
   errors: Partial<Record<"day" | "startsAt" | "endsAt" | "roomNo", string>>;
   onChange: (patch: Partial<ClassDraft>) => void;
   onClose: () => void;
-  onSubmit: (e: React.FormEvent) => void;
   variant?: "side" | "sheet";
 };
 
@@ -33,18 +31,23 @@ export function ClassComposerPanel({
   errors,
   onChange,
   onClose,
-  onSubmit,
   variant = "side",
 }: ClassComposerPanelProps) {
   return (
-    <form onSubmit={onSubmit} className="flex flex-1 flex-col">
+    <aside
+      className={cn(
+        "flex h-full w-full flex-col bg-muted/40",
+        variant === "side" && "border-l border-border",
+        variant === "sheet" && "min-h-0 rounded-t-2xl",
+      )}
+    >
+      {/* Header */}
       <div
         className={cn(
-          "flex items-center justify-between",
-          variant === "side" ? "px-5 py-4" : "px-4 py-2",
+          "flex shrink-0 items-center justify-end",
+          variant === "side" ? "px-6 py-4" : "px-4 py-2",
         )}
       >
-        <h3 className="text-sm font-semibold text-foreground">Add class</h3>
         <button
           type="button"
           onClick={onClose}
@@ -55,24 +58,30 @@ export function ClassComposerPanel({
         </button>
       </div>
 
+      {/* Body */}
       <div
         className={cn(
-          "flex flex-1 flex-col gap-5 overflow-y-auto",
-          variant === "side" ? "px-5 pb-8" : "px-4 pb-6",
+          "flex flex-1 flex-col gap-6 overflow-y-auto pb-10",
+          variant === "side" ? "px-6" : "px-4",
         )}
       >
-        <div className="space-y-1.5">
+        {/* Day */}
+        <div className="space-y-2">
           <label className="text-sm font-medium text-foreground">Day</label>
           <Select
             value={draft.day}
             onValueChange={(v) => onChange({ day: v as ClassInput["day"] })}
           >
-            <SelectTrigger className="w-full bg-background">
+            <SelectTrigger className="h-9 w-full bg-background">
               <SelectValue />
             </SelectTrigger>
-            <SelectContent>
+            <SelectContent className="min-w-[160px] py-1">
               {dayOfWeekEnum.options.map((value) => (
-                <SelectItem key={value} value={value}>
+                <SelectItem
+                  key={value}
+                  value={value}
+                  className="py-1.5 pl-2 pr-8 text-sm"
+                >
                   {DAY_OF_WEEK_LABELS[value]}
                 </SelectItem>
               ))}
@@ -83,7 +92,8 @@ export function ClassComposerPanel({
           )}
         </div>
 
-        <div className="space-y-1.5">
+        {/* Starts at — temporary native (next step: modern picker) */}
+        <div className="space-y-2">
           <label className="text-sm font-medium text-foreground">
             Starts at
           </label>
@@ -98,20 +108,8 @@ export function ClassComposerPanel({
           )}
         </div>
 
-        <div className="space-y-1.5">
-          <label className="text-sm font-medium text-foreground">Ends at</label>
-          <input
-            type="time"
-            value={draft.endsAt}
-            onChange={(e) => onChange({ endsAt: e.target.value })}
-            className="h-9 w-full rounded-lg border border-input bg-background px-2.5 text-sm outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50"
-          />
-          {errors.endsAt && (
-            <p className="text-xs text-destructive">{errors.endsAt}</p>
-          )}
-        </div>
-
-        <div className="space-y-1.5">
+        {/* Room */}
+        <div className="space-y-2">
           <label className="text-sm font-medium text-foreground">Room</label>
           <input
             value={draft.roomNo}
@@ -121,25 +119,6 @@ export function ClassComposerPanel({
           />
         </div>
       </div>
-
-      <div
-        className={cn(
-          "flex shrink-0 gap-2 border-t border-border",
-          variant === "side" ? "px-5 py-4" : "px-4 py-3",
-        )}
-      >
-        <Button
-          type="button"
-          variant="outline"
-          className="flex-1 bg-background"
-          onClick={onClose}
-        >
-          Cancel
-        </Button>
-        <Button type="submit" className="flex-1" disabled={!draft.startsAt}>
-          Add class
-        </Button>
-      </div>
-    </form>
+    </aside>
   );
 }
