@@ -23,6 +23,16 @@ export async function createCourse(
     };
   }
 
+  let rawClasses: unknown = [];
+  try {
+    rawClasses = JSON.parse(String(formData.get("classesJson") ?? "[]"));
+  } catch {
+    return {
+      status: "error",
+      message: "Something went wrong reading the classes. Try again.",
+    };
+  }
+
   const parsed = createCourseSchema.safeParse({
     title: formData.get("title"),
     courseCode: formData.get("courseCode"),
@@ -30,6 +40,7 @@ export async function createCourse(
     gradePoint: formData.get("gradePoint"),
     teacher: formData.get("teacher"),
     semesterId: formData.get("semesterId"),
+    classes: rawClasses,
   });
 
   if (!parsed.success) {
@@ -40,8 +51,15 @@ export async function createCourse(
     };
   }
 
-  const { title, courseCode, credit, gradePoint, teacher, semesterId } =
-    parsed.data;
+  const {
+    title,
+    courseCode,
+    credit,
+    gradePoint,
+    teacher,
+    semesterId,
+    classes,
+  } = parsed.data;
 
   const semester = await prisma.semester.findFirst({
     where: { id: semesterId, userId: user.id },
@@ -56,15 +74,29 @@ export async function createCourse(
   }
 
   try {
-    await prisma.course.create({
-      data: {
-        title,
-        courseCode,
-        credit,
-        gradePoint: gradePoint ?? null,
-        teacher: teacher ?? null,
-        semesterId,
-      },
+    await prisma.$transaction(async (tx) => {
+      const course = await tx.course.create({
+        data: {
+          title,
+          courseCode,
+          credit,
+          gradePoint: gradePoint ?? null,
+          teacher: teacher ?? null,
+          semesterId,
+        },
+      });
+
+      if (classes.length > 0) {
+        await tx.class.createMany({
+          data: classes.map((c) => ({
+            courseId: course.id,
+            day: c.day,
+            roomNo: c.roomNo ?? null,
+            startsAt: c.startsAt,
+            endsAt: c.endsAt ?? null,
+          })),
+        });
+      }
     });
   } catch {
     return {

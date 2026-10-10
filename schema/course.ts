@@ -1,5 +1,50 @@
 import { z } from "zod";
 
+export const dayOfWeekEnum = z.enum([
+  "MONDAY",
+  "TUESDAY",
+  "WEDNESDAY",
+  "THURSDAY",
+  "FRIDAY",
+  "SATURDAY",
+  "SUNDAY",
+]);
+
+export const DAY_OF_WEEK_LABELS: Record<
+  z.infer<typeof dayOfWeekEnum>,
+  string
+> = {
+  MONDAY: "Monday",
+  TUESDAY: "Tuesday",
+  WEDNESDAY: "Wednesday",
+  THURSDAY: "Thursday",
+  FRIDAY: "Friday",
+  SATURDAY: "Saturday",
+  SUNDAY: "Sunday",
+};
+
+const timeRegex = /^([01]\d|2[0-3]):([0-5]\d)$/;
+
+export const classInputSchema = z.object({
+  day: dayOfWeekEnum,
+  roomNo: z
+    .string()
+    .trim()
+    .max(40, "Keep the room under 40 characters")
+    .optional()
+    .transform((v) => (v === "" || v === undefined ? undefined : v)),
+  startsAt: z.string().trim().regex(timeRegex, "Use HH:mm format (e.g. 09:30)"),
+  endsAt: z
+    .union([
+      z.string().trim().regex(timeRegex, "Use HH:mm format (e.g. 10:50)"),
+      z.literal(""),
+    ])
+    .optional()
+    .transform((v) => (v === "" || v === undefined ? undefined : v)),
+});
+
+export type ClassInput = z.infer<typeof classInputSchema>;
+
 export const createCourseSchema = z.object({
   title: z
     .string()
@@ -37,58 +82,21 @@ export const createCourseSchema = z.object({
       value === "" || value === undefined ? undefined : value,
     ),
   semesterId: z.string().uuid("Pick a semester"),
+  classes: z.array(classInputSchema).default([]),
 });
 
 export type CreateCourseInput = z.infer<typeof createCourseSchema>;
 
-export const updateCourseSchema = createCourseSchema.extend({
-  id: z.string().uuid(),
-});
+export const updateCourseSchema = createCourseSchema
+  .omit({ classes: true })
+  .extend({
+    id: z.string().uuid(),
+  });
 
 export type UpdateCourseInput = z.infer<typeof updateCourseSchema>;
 
-export const dayOfWeekEnum = z.enum([
-  "MONDAY",
-  "TUESDAY",
-  "WEDNESDAY",
-  "THURSDAY",
-  "FRIDAY",
-  "SATURDAY",
-  "SUNDAY",
-]);
-
-export const DAY_OF_WEEK_LABELS: Record<
-  z.infer<typeof dayOfWeekEnum>,
-  string
-> = {
-  MONDAY: "Monday",
-  TUESDAY: "Tuesday",
-  WEDNESDAY: "Wednesday",
-  THURSDAY: "Thursday",
-  FRIDAY: "Friday",
-  SATURDAY: "Saturday",
-  SUNDAY: "Sunday",
-};
-
-const timeRegex = /^([01]\d|2[0-3]):([0-5]\d)$/;
-
-export const createClassSchema = z.object({
+export const createClassSchema = classInputSchema.extend({
   courseId: z.string().uuid(),
-  day: dayOfWeekEnum,
-  roomNo: z
-    .string()
-    .trim()
-    .max(40, "Keep the room under 40 characters")
-    .optional()
-    .transform((v) => (v === "" || v === undefined ? undefined : v)),
-  startsAt: z.string().trim().regex(timeRegex, "Use HH:mm format (e.g. 09:30)"),
-  endsAt: z
-    .union([
-      z.string().trim().regex(timeRegex, "Use HH:mm format (e.g. 10:50)"),
-      z.literal(""),
-    ])
-    .optional()
-    .transform((v) => (v === "" || v === undefined ? undefined : v)),
 });
 
 export type CreateClassInput = z.infer<typeof createClassSchema>;
