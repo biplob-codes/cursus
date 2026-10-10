@@ -4,6 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { DailyPlansIcon } from "@/icons/daily-plans";
 import { NotesIcon } from "@/icons/notes";
+import { SemestersIcon } from "@/icons/semesters";
 import { useSession } from "@/lib/auth-client";
 import { cn } from "@/lib/utils";
 import { UserAvatar } from "@/components/user-avatar";
@@ -12,6 +13,7 @@ import { useAppChrome } from "./app-chrome-context";
 const navItems = [
   { label: "Daily plans", href: "/plans", icon: DailyPlansIcon },
   { label: "Notes", href: "/notes", icon: NotesIcon },
+  { label: "Semesters", href: "/semesters", icon: SemestersIcon },
 ] as const;
 
 export default function Sidebar() {
