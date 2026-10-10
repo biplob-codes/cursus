@@ -61,18 +61,19 @@ model NoteTag {
 }
 
 model User {
-  id            String    @id
+  id            String     @id
   name          String
   email         String
-  emailVerified Boolean   @default(false)
+  emailVerified Boolean    @default(false)
   image         String?
-  createdAt     DateTime  @default(now())
-  updatedAt     DateTime  @updatedAt
+  createdAt     DateTime   @default(now())
+  updatedAt     DateTime   @updatedAt
   sessions      Session[]
   accounts      Account[]
   plans         Plan[]
   notes         Note[]
   tags          Tag[]
+  semesters     Semester[]
 
   @@unique([email])
   @@map("user")
@@ -150,4 +151,66 @@ model Verification {
 
   @@index([identifier])
   @@map("verification")
+}
+
+enum SemesterName {
+  FALL
+  SPRING
+  SUMMER
+}
+
+enum DayOfWeek {
+  MONDAY
+  TUESDAY
+  WEDNESDAY
+  THURSDAY
+  FRIDAY
+  SATURDAY
+  SUNDAY
+}
+
+model Semester {
+  id        String       @id @default(uuid())
+  name      SemesterName
+  year      Int
+  createdAt DateTime     @default(now())
+  updatedAt DateTime     @updatedAt
+  userId    String
+  user      User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  courses   Course[]
+
+  @@unique([userId, name, year])
+  @@index([userId])
+}
+
+model Course {
+  id         String   @id @default(uuid())
+  title      String
+  courseCode String
+  credit     Float
+  gradePoint Float?
+  teacher    String?
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+  semesterId String
+  semester   Semester @relation(fields: [semesterId], references: [id], onDelete: Cascade)
+  classes    Class[]
+
+  @@index([semesterId])
+  @@index([courseCode])
+}
+
+model Class {
+  id        String    @id @default(uuid())
+  day       DayOfWeek
+  roomNo    String?
+  startsAt  String // HH:mm format, e.g. "09:30"
+  endsAt    String? // HH:mm format, optional
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  courseId  String
+  course    Course    @relation(fields: [courseId], references: [id], onDelete: Cascade)
+
+  @@index([courseId])
+  @@index([day])
 }
