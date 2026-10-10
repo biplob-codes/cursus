@@ -40,3 +40,55 @@ export const createCourseSchema = z.object({
 });
 
 export type CreateCourseInput = z.infer<typeof createCourseSchema>;
+
+export const updateCourseSchema = createCourseSchema.extend({
+  id: z.string().uuid(),
+});
+
+export type UpdateCourseInput = z.infer<typeof updateCourseSchema>;
+
+export const dayOfWeekEnum = z.enum([
+  "MONDAY",
+  "TUESDAY",
+  "WEDNESDAY",
+  "THURSDAY",
+  "FRIDAY",
+  "SATURDAY",
+  "SUNDAY",
+]);
+
+export const DAY_OF_WEEK_LABELS: Record<
+  z.infer<typeof dayOfWeekEnum>,
+  string
+> = {
+  MONDAY: "Monday",
+  TUESDAY: "Tuesday",
+  WEDNESDAY: "Wednesday",
+  THURSDAY: "Thursday",
+  FRIDAY: "Friday",
+  SATURDAY: "Saturday",
+  SUNDAY: "Sunday",
+};
+
+const timeRegex = /^([01]\d|2[0-3]):([0-5]\d)$/;
+
+export const createClassSchema = z.object({
+  courseId: z.string().uuid(),
+  day: dayOfWeekEnum,
+  roomNo: z
+    .string()
+    .trim()
+    .max(40, "Keep the room under 40 characters")
+    .optional()
+    .transform((v) => (v === "" || v === undefined ? undefined : v)),
+  startsAt: z.string().trim().regex(timeRegex, "Use HH:mm format (e.g. 09:30)"),
+  endsAt: z
+    .union([
+      z.string().trim().regex(timeRegex, "Use HH:mm format (e.g. 10:50)"),
+      z.literal(""),
+    ])
+    .optional()
+    .transform((v) => (v === "" || v === undefined ? undefined : v)),
+});
+
+export type CreateClassInput = z.infer<typeof createClassSchema>;
