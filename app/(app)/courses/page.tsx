@@ -1,8 +1,8 @@
 import Link from "next/link";
 import { prisma } from "@/lib/prisma";
 import { requireUser } from "@/lib/session";
-import { SEMESTER_NAME_LABELS } from "@/schema/semester";
 import { Button } from "@/ui/button";
+import { CoursesTable } from "./courses-table";
 
 export default async function CoursesPage() {
   const user = await requireUser();
@@ -34,11 +34,8 @@ export default async function CoursesPage() {
         <h1 className="text-xl font-semibold tracking-tight text-foreground sm:text-2xl">
           Courses
         </h1>
-        <Button
-          className="w-full sm:w-auto"
-          render={<Link href="/courses/new" />}
-        >
-          Create course
+        <Button className="w-full sm:w-auto">
+          <Link href="/courses/new">Create course</Link>
         </Button>
       </div>
 
@@ -53,22 +50,7 @@ export default async function CoursesPage() {
           </Link>
         </p>
       ) : (
-        <ul className="space-y-1">
-          {courses.map((course) => (
-            <li
-              key={course.id}
-              className="rounded-md px-2 py-1.5 text-sm text-foreground hover:bg-muted/50"
-            >
-              <span className="font-medium">{course.title}</span>
-              <span className="text-muted-foreground">
-                {" "}
-                · {course.courseCode} ·{" "}
-                {SEMESTER_NAME_LABELS[course.semester.name]}{" "}
-                {course.semester.year}
-              </span>
-            </li>
-          ))}
-        </ul>
+        <CoursesTable courses={courses} />
       )}
     </div>
   );
