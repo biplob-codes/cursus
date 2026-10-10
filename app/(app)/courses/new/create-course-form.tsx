@@ -350,35 +350,46 @@ export function CreateCourseForm({
 
               {classes.length > 0 && (
                 <ul className="space-y-0.5">
-                  {classes.map((c, index) => (
-                    <li
-                      key={`${c.day}-${c.startsAt}-${index}`}
-                      className="flex items-center gap-2 rounded px-2 py-1.5 text-sm hover:bg-muted/50"
-                    >
-                      <span className="min-w-0 flex-1 font-medium text-foreground">
-                        {DAY_OF_WEEK_LABELS[c.day]}
-                      </span>
-                      <span className="tabular-nums text-muted-foreground">
-                        {c.startsAt}
-                        {c.roomNo ? ` · ${c.roomNo}` : ""}
-                      </span>
-                      <button
-                        type="button"
-                        onClick={() =>
-                          setClasses((prev) =>
-                            prev.filter((_, i) => i !== index),
-                          )
-                        }
-                        className="rounded p-0.5 text-muted-foreground hover:bg-muted hover:text-foreground"
-                        aria-label="Remove class"
+                  {classes.map((c, index) => {
+                    let timeLabel = c.startsAt;
+                    if (c.startsAt) {
+                      const [hStr, mStr] = c.startsAt.split(":");
+                      const hour24 = parseInt(hStr, 10);
+                      const minute = parseInt(mStr, 10) || 0;
+                      const period = hour24 >= 12 ? "PM" : "AM";
+                      const hour12 = hour24 % 12 || 12;
+                      timeLabel = `${hour12}:${String(minute).padStart(2, "0")} ${period}`;
+                    }
+
+                    return (
+                      <li
+                        key={`${c.day}-${c.startsAt}-${index}`}
+                        className="flex items-center gap-2 rounded px-2 py-1.5 text-sm hover:bg-muted/50"
                       >
-                        <X className="h-3.5 w-3.5" />
-                      </button>
-                    </li>
-                  ))}
+                        <span className="min-w-0 flex-1 font-medium text-foreground">
+                          {DAY_OF_WEEK_LABELS[c.day]}
+                        </span>
+                        <span className="tabular-nums text-muted-foreground">
+                          {timeLabel}
+                          {c.roomNo ? ` · ${c.roomNo}` : ""}
+                        </span>
+                        <button
+                          type="button"
+                          onClick={() =>
+                            setClasses((prev) =>
+                              prev.filter((_, i) => i !== index),
+                            )
+                          }
+                          className="rounded p-0.5 text-muted-foreground hover:bg-muted hover:text-foreground"
+                          aria-label="Remove class"
+                        >
+                          <X className="h-3.5 w-3.5" />
+                        </button>
+                      </li>
+                    );
+                  })}
                 </ul>
               )}
-
               {/* Live draft preview (same pattern as plans) */}
               {showDraftPreview && (
                 <div className="flex items-center gap-2 rounded px-2 py-1.5 bg-muted/40">

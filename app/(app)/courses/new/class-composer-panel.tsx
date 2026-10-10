@@ -72,6 +72,10 @@ export function ClassComposerPanel({
           <Select
             value={draft.day}
             onValueChange={(v) => onChange({ day: v as ClassInput["day"] })}
+            items={dayOfWeekEnum.options.map((value) => ({
+              value,
+              label: DAY_OF_WEEK_LABELS[value],
+            }))}
           >
             <SelectTrigger className="h-9 w-full bg-background">
               <SelectValue />
