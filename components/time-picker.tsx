@@ -12,8 +12,8 @@ type TimePickerProps = {
   className?: string;
 };
 
-const HOURS = Array.from({ length: 12 }, (_, i) => i + 1); // 1–12
-const MINUTES = Array.from({ length: 12 }, (_, i) => i * 5); // 0, 5, 10 … 55
+const HOURS = Array.from({ length: 12 }, (_, i) => i + 1);
+const MINUTES = Array.from({ length: 12 }, (_, i) => i * 5);
 
 function parseValue(value: string): {
   hour12: number;
@@ -83,19 +83,19 @@ export function TimePicker({
         <Clock className="size-4 shrink-0 text-muted-foreground" />
       </PopoverTrigger>
 
-      <PopoverContent align="start" sideOffset={6} className="w-auto p-0">
-        <div className="flex">
+      <PopoverContent align="start" sideOffset={6} className="w-auto p-2">
+        <div className="flex gap-1">
           {/* Hours */}
-          <div className="flex max-h-56 w-[72px] flex-col overflow-y-auto border-r border-border py-1">
+          <div className="grid grid-cols-3 gap-0.5">
             {HOURS.map((h) => (
               <button
                 key={h}
                 type="button"
                 onClick={() => update(h, minute, period)}
                 className={cn(
-                  "px-3 py-1.5 text-center text-sm tabular-nums transition-colors",
+                  "flex h-8 w-9 items-center justify-center rounded-md text-sm tabular-nums transition-colors",
                   h === hour12
-                    ? "bg-accent font-medium text-accent-foreground"
+                    ? "bg-primary text-primary-foreground"
                     : "text-foreground hover:bg-muted",
                 )}
               >
@@ -104,17 +104,19 @@ export function TimePicker({
             ))}
           </div>
 
+          <div className="w-px self-stretch bg-border" />
+
           {/* Minutes */}
-          <div className="flex max-h-56 w-[72px] flex-col overflow-y-auto border-r border-border py-1">
+          <div className="grid grid-cols-3 gap-0.5">
             {MINUTES.map((m) => (
               <button
                 key={m}
                 type="button"
                 onClick={() => update(hour12, m, period)}
                 className={cn(
-                  "px-3 py-1.5 text-center text-sm tabular-nums transition-colors",
+                  "flex h-8 w-9 items-center justify-center rounded-md text-sm tabular-nums transition-colors",
                   m === minute
-                    ? "bg-accent font-medium text-accent-foreground"
+                    ? "bg-primary text-primary-foreground"
                     : "text-foreground hover:bg-muted",
                 )}
               >
@@ -123,17 +125,19 @@ export function TimePicker({
             ))}
           </div>
 
+          <div className="w-px self-stretch bg-border" />
+
           {/* AM / PM */}
-          <div className="flex w-[72px] flex-col py-1">
+          <div className="flex flex-col gap-0.5">
             {(["AM", "PM"] as const).map((p) => (
               <button
                 key={p}
                 type="button"
                 onClick={() => update(hour12, minute, p)}
                 className={cn(
-                  "px-3 py-1.5 text-center text-sm transition-colors",
+                  "flex h-8 w-10 items-center justify-center rounded-md text-sm transition-colors",
                   p === period
-                    ? "bg-accent font-medium text-accent-foreground"
+                    ? "bg-primary text-primary-foreground"
                     : "text-foreground hover:bg-muted",
                 )}
               >

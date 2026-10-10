@@ -8,6 +8,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/ui/select";
+import { TimePicker } from "@/components/time-picker";
 import { cn } from "@/lib/utils";
 import { X } from "lucide-react";
 
@@ -92,16 +93,15 @@ export function ClassComposerPanel({
           )}
         </div>
 
-        {/* Starts at — temporary native (next step: modern picker) */}
+        {/* Starts at */}
         <div className="space-y-2">
           <label className="text-sm font-medium text-foreground">
             Starts at
           </label>
-          <input
-            type="time"
+          <TimePicker
             value={draft.startsAt}
-            onChange={(e) => onChange({ startsAt: e.target.value })}
-            className="h-9 w-full rounded-lg border border-input bg-background px-2.5 text-sm outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50"
+            onChange={(value) => onChange({ startsAt: value })}
+            placeholder="Select time"
           />
           {errors.startsAt && (
             <p className="text-xs text-destructive">{errors.startsAt}</p>

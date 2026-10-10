@@ -49,14 +49,17 @@ const labelClass = "w-[120px] shrink-0 text-sm text-muted-foreground";
 
 function formatClassPreview(draft: ClassDraft): string {
   const day = DAY_OF_WEEK_LABELS[draft.day] ?? draft.day;
+
   let time = "";
   if (draft.startsAt) {
-    const [h, m] = draft.startsAt.split(":");
-    const hour = parseInt(h, 10);
-    const ampm = hour >= 12 ? "PM" : "AM";
-    const hour12 = hour % 12 || 12;
-    time = `${hour12}:${m} ${ampm}`;
+    const [hStr, mStr] = draft.startsAt.split(":");
+    const hour24 = parseInt(hStr, 10);
+    const minute = parseInt(mStr, 10) || 0;
+    const period = hour24 >= 12 ? "PM" : "AM";
+    const hour12 = hour24 % 12 || 12;
+    time = `${hour12}:${String(minute).padStart(2, "0")} ${period}`;
   }
+
   const parts = [day];
   if (time) parts.push(time);
   if (draft.roomNo.trim()) parts.push(draft.roomNo.trim());
