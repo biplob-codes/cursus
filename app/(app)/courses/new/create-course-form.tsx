@@ -204,19 +204,27 @@ export function CreateCourseForm({
               <Select
                 value={semesterId}
                 onValueChange={(v) => setSemesterId(v as string)}
+                items={semesters.map((s) => ({
+                  value: s.id,
+                  label: s.label,
+                }))}
               >
                 <SelectTrigger
                   className={cn(
-                    "h-auto w-auto gap-1 border-0 bg-transparent px-0 py-1 text-base shadow-none",
+                    "h-auto w-auto min-w-[140px] gap-1 border-0 bg-transparent px-0 py-1 text-base shadow-none",
                     "hover:bg-transparent focus-visible:ring-0 focus-visible:border-transparent",
                     "data-[popup-open]:bg-transparent",
                   )}
                 >
                   <SelectValue placeholder="Select semester" />
                 </SelectTrigger>
-                <SelectContent>
+                <SelectContent className="min-w-[180px] py-1">
                   {semesters.map((s) => (
-                    <SelectItem key={s.id} value={s.id}>
+                    <SelectItem
+                      key={s.id}
+                      value={s.id}
+                      className="py-1.5 pl-2 pr-8 text-sm"
+                    >
                       {s.label}
                     </SelectItem>
                   ))}
