@@ -3,7 +3,7 @@
 import { useActionState, useEffect, useState } from "react";
 import { updateCourse, createClass } from "@/actions/course";
 import { initialActionState } from "@/actions/action-state";
-import { DAY_OF_WEEK_LABELS, dayOfWeekEnum } from "@/schema/course";
+import { classInputSchema, DAY_OF_WEEK_LABELS } from "@/schema/course";
 import { Button } from "@/ui/button";
 import {
   Select,
@@ -13,7 +13,12 @@ import {
   SelectValue,
 } from "@/ui/select";
 import { cn } from "@/lib/utils";
-import { Plus, X } from "lucide-react";
+import { Plus } from "lucide-react";
+import { useAppChrome } from "@/components/app-chrome-context";
+import {
+  ClassComposerPanel,
+  type ClassDraft,
+} from "../new/class-composer-panel";
 
 type ClassItem = {
   id: string;
@@ -34,15 +39,60 @@ type CourseData = {
   classes: ClassItem[];
 };
 
-type SemesterOption = { id: string; label: string };
+type SemesterOption = {
+  id: string;
+  label: string;
+};
 
-const PANEL_MS = 280;
-const PANEL_WIDTH = 380;
+const PANEL_MS = 300;
 
-const fieldClass =
-  "w-full bg-transparent text-sm text-foreground outline-none placeholder:text-muted-foreground/40";
+const emptyClassDraft: ClassDraft = {
+  day: "MONDAY",
+  roomNo: "",
+  startsAt: "",
+  endsAt: "",
+};
 
-const labelClass = "text-sm text-muted-foreground shrink-0 w-[120px]";
+const fieldInput = cn(
+  "w-full bg-transparent text-base text-foreground outline-none",
+  "placeholder:text-muted-foreground/45",
+  "[&:-webkit-autofill]:shadow-[inset_0_0_0px_1000px_var(--background)]",
+  "[&:-webkit-autofill]:[-webkit-text-fill-color:var(--foreground)]",
+  "[appearance:textfield]",
+  "[&::-webkit-outer-spin-button]:appearance-none",
+  "[&::-webkit-inner-spin-button]:appearance-none",
+);
+
+const labelClass = "w-[120px] shrink-0 text-sm text-muted-foreground";
+
+function formatClassPreview(draft: ClassDraft): string {
+  const day = DAY_OF_WEEK_LABELS[draft.day] ?? draft.day;
+
+  let time = "";
+  if (draft.startsAt) {
+    const [hStr, mStr] = draft.startsAt.split(":");
+    const hour24 = parseInt(hStr, 10);
+    const minute = parseInt(mStr, 10) || 0;
+    const period = hour24 >= 12 ? "PM" : "AM";
+    const hour12 = hour24 % 12 || 12;
+    time = `${hour12}:${String(minute).padStart(2, "0")} ${period}`;
+  }
+
+  const parts = [day];
+  if (time) parts.push(time);
+  if (draft.roomNo.trim()) parts.push(draft.roomNo.trim());
+  return parts.join(" · ");
+}
+
+function formatTimeLabel(startsAt: string): string {
+  if (!startsAt) return startsAt;
+  const [hStr, mStr] = startsAt.split(":");
+  const hour24 = parseInt(hStr, 10);
+  const minute = parseInt(mStr, 10) || 0;
+  const period = hour24 >= 12 ? "PM" : "AM";
+  const hour12 = hour24 % 12 || 12;
+  return `${hour12}:${String(minute).padStart(2, "0")} ${period}`;
+}
 
 export function CourseDetailView({
   course,
@@ -51,6 +101,8 @@ export function CourseDetailView({
   course: CourseData;
   semesters: SemesterOption[];
 }) {
+  const { setContentFlush } = useAppChrome();
+
   const [title, setTitle] = useState(course.title);
   const [courseCode, setCourseCode] = useState(course.courseCode);
   const [credit, setCredit] = useState(String(course.credit));
@@ -65,288 +117,383 @@ export function CourseDetailView({
     initialActionState,
   );
 
-  // Class panel (local — does not hide sidebar)
-  const [panelOpen, setPanelOpen] = useState(false);
-  const [panelMounted, setPanelMounted] = useState(false);
-  const [panelEntered, setPanelEntered] = useState(false);
-
-  const [day, setDay] = useState<string>("MONDAY");
-  const [roomNo, setRoomNo] = useState("");
-  const [startsAt, setStartsAt] = useState("");
-  const [endsAt, setEndsAt] = useState("");
+  const [draft, setDraft] = useState<ClassDraft>(emptyClassDraft);
+  const [classErrors, setClassErrors] = useState<
+    Partial<Record<"day" | "startsAt" | "endsAt" | "roomNo", string>>
+  >({});
 
   const [classState, classAction, isAddingClass] = useActionState(
     createClass,
     initialActionState,
   );
 
+  const [panelOpen, setPanelOpen] = useState(false);
+  const [panelMounted, setPanelMounted] = useState(false);
+  const [panelEntered, setPanelEntered] = useState(false);
+
   useEffect(() => {
     if (panelOpen) {
+      setContentFlush(true);
       setPanelMounted(true);
       const id = requestAnimationFrame(() => {
         requestAnimationFrame(() => setPanelEntered(true));
       });
       return () => cancelAnimationFrame(id);
     }
+
     setPanelEntered(false);
-    const t = setTimeout(() => setPanelMounted(false), PANEL_MS);
+    const t = setTimeout(() => {
+      setPanelMounted(false);
+      setContentFlush(false);
+    }, PANEL_MS);
     return () => clearTimeout(t);
-  }, [panelOpen]);
+  }, [panelOpen, setContentFlush]);
 
   useEffect(() => {
     if (classState.status === "success") {
       setPanelOpen(false);
-      setDay("MONDAY");
-      setRoomNo("");
-      setStartsAt("");
-      setEndsAt("");
+      setDraft(emptyClassDraft);
+      setClassErrors({});
     }
   }, [classState]);
 
+  function trySubmitDraft() {
+    if (!draft.startsAt.trim()) {
+      setDraft(emptyClassDraft);
+      setClassErrors({});
+      return;
+    }
+
+    const parsed = classInputSchema.safeParse({
+      day: draft.day,
+      roomNo: draft.roomNo || undefined,
+      startsAt: draft.startsAt,
+      endsAt: draft.endsAt || undefined,
+    });
+
+    if (!parsed.success) {
+      const flat = parsed.error.flatten().fieldErrors;
+      setClassErrors({
+        day: flat.day?.[0],
+        startsAt: flat.startsAt?.[0],
+        endsAt: flat.endsAt?.[0],
+        roomNo: flat.roomNo?.[0],
+      });
+      return;
+    }
+
+    const formData = new FormData();
+    formData.set("courseId", course.id);
+    formData.set("day", parsed.data.day);
+    formData.set("startsAt", parsed.data.startsAt);
+    if (parsed.data.endsAt) formData.set("endsAt", parsed.data.endsAt);
+    if (parsed.data.roomNo) formData.set("roomNo", parsed.data.roomNo);
+
+    classAction(formData);
+  }
+
   function openPanel() {
+    if (panelOpen) {
+      trySubmitDraft();
+      setDraft(emptyClassDraft);
+      setClassErrors({});
+      return;
+    }
+    setDraft(emptyClassDraft);
+    setClassErrors({});
     setPanelOpen(true);
   }
 
   function closePanel() {
+    trySubmitDraft();
     setPanelOpen(false);
   }
 
+  const showDraftPreview = panelOpen && draft;
+
   return (
-    <div className="relative flex min-h-full">
-      {/* Main content */}
+    <div className="flex h-full min-h-0 w-full overflow-hidden">
+      {/* Main form column */}
       <div
         className={cn(
-          "mx-auto w-full max-w-2xl flex-1 space-y-8 transition-[padding] duration-300",
-          panelEntered ? "pr-2" : "",
+          "min-w-0 flex-1 overflow-y-auto transition-[width] duration-300 ease-out",
+          panelEntered ? "md:w-1/2 md:px-10 md:py-12" : "w-full",
+          "px-4 py-6 sm:px-6",
         )}
-      >
-        <form action={updateAction} className="space-y-8">
-          <input type="hidden" name="id" value={course.id} />
-          <input type="hidden" name="semesterId" value={semesterId} />
-
-          {/* Title — borderless, Notion-like */}
-          <div>
-            <textarea
-              name="title"
-              value={title}
-              onChange={(e) => {
-                setTitle(e.target.value);
-                const el = e.target;
-                el.style.height = "auto";
-                el.style.height = `${el.scrollHeight}px`;
-              }}
-              onKeyDown={(e) => {
-                if (e.key === "Enter") e.preventDefault();
-              }}
-              ref={(el) => {
-                if (el) {
-                  el.style.height = "auto";
-                  el.style.height = `${el.scrollHeight}px`;
-                }
-              }}
-              rows={1}
-              placeholder="Untitled course"
-              className="w-full resize-none overflow-hidden bg-transparent text-3xl font-semibold tracking-tight text-foreground outline-none placeholder:text-muted-foreground/35"
-            />
-            {updateState.errors?.title?.[0] && (
-              <p className="mt-1 text-xs text-destructive">
-                {updateState.errors.title[0]}
-              </p>
-            )}
-          </div>
-
-          {/* Property rows — no borders */}
-          <div className="space-y-3">
-            <div className="flex items-center gap-3">
-              <span className={labelClass}>Semester</span>
-              <Select
-                value={semesterId}
-                onValueChange={(v) => setSemesterId(v as string)}
-              >
-                <SelectTrigger className="h-auto w-auto gap-1 border-0 bg-transparent px-0 py-1 shadow-none hover:bg-transparent focus-visible:ring-0 data-[popup-open]:bg-transparent">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {semesters.map((s) => (
-                    <SelectItem key={s.id} value={s.id}>
-                      {s.label}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-
-            <div className="flex items-center gap-3">
-              <label htmlFor="courseCode" className={labelClass}>
-                Course code
-              </label>
-              <input
-                id="courseCode"
-                name="courseCode"
-                value={courseCode}
-                onChange={(e) => setCourseCode(e.target.value)}
-                placeholder="e.g. CSE-2201"
-                className={fieldClass}
-              />
-            </div>
-            {updateState.errors?.courseCode?.[0] && (
-              <p className="pl-[132px] text-xs text-destructive">
-                {updateState.errors.courseCode[0]}
-              </p>
-            )}
-
-            <div className="flex items-center gap-3">
-              <label htmlFor="credit" className={labelClass}>
-                Credit
-              </label>
-              <input
-                id="credit"
-                name="credit"
-                type="number"
-                step="0.5"
-                min="0"
-                value={credit}
-                onChange={(e) => setCredit(e.target.value)}
-                placeholder="3"
-                className={cn(fieldClass, "max-w-[100px]")}
-              />
-            </div>
-            {updateState.errors?.credit?.[0] && (
-              <p className="pl-[132px] text-xs text-destructive">
-                {updateState.errors.credit[0]}
-              </p>
-            )}
-
-            <div className="flex items-center gap-3">
-              <label htmlFor="teacher" className={labelClass}>
-                Teacher
-              </label>
-              <input
-                id="teacher"
-                name="teacher"
-                value={teacher}
-                onChange={(e) => setTeacher(e.target.value)}
-                placeholder="Optional"
-                className={fieldClass}
-              />
-            </div>
-
-            <div className="flex items-center gap-3">
-              <label htmlFor="gradePoint" className={labelClass}>
-                Grade point
-              </label>
-              <input
-                id="gradePoint"
-                name="gradePoint"
-                type="number"
-                step="0.01"
-                min="0"
-                max="4"
-                value={gradePoint}
-                onChange={(e) => setGradePoint(e.target.value)}
-                placeholder="Optional"
-                className={cn(fieldClass, "max-w-[100px]")}
-              />
-            </div>
-            {updateState.errors?.gradePoint?.[0] && (
-              <p className="pl-[132px] text-xs text-destructive">
-                {updateState.errors.gradePoint[0]}
-              </p>
-            )}
-          </div>
-
-          {updateState.status === "error" &&
-            updateState.message &&
-            !updateState.errors && (
-              <p className="text-sm text-destructive">{updateState.message}</p>
-            )}
-          {updateState.status === "success" && (
-            <p className="text-sm text-muted-foreground">
-              {updateState.message}
-            </p>
-          )}
-
-          <div>
-            <Button type="submit" disabled={isUpdating} size="sm">
-              {isUpdating ? "Saving…" : "Save changes"}
-            </Button>
-          </div>
-        </form>
-
-        {/* Classes section */}
-        <section className="space-y-3">
-          <div className="flex items-center justify-between">
-            <h2 className="text-sm font-medium text-foreground">Classes</h2>
-            <Button
-              type="button"
-              variant="ghost"
-              size="sm"
-              onClick={openPanel}
-              className="gap-1.5 text-muted-foreground"
-            >
-              <Plus className="h-3.5 w-3.5" />
-              Add class
-            </Button>
-          </div>
-
-          {course.classes.length === 0 ? (
-            <p className="px-1 text-sm text-muted-foreground">
-              No classes scheduled yet.
-            </p>
-          ) : (
-            <ul className="space-y-1">
-              {course.classes.map((c) => (
-                <li
-                  key={c.id}
-                  className="flex items-center justify-between rounded-md px-2 py-1.5 text-sm hover:bg-muted/50"
-                >
-                  <span className="font-medium text-foreground">
-                    {DAY_OF_WEEK_LABELS[
-                      c.day as keyof typeof DAY_OF_WEEK_LABELS
-                    ] ?? c.day}
-                  </span>
-                  <span className="tabular-nums text-muted-foreground">
-                    {c.startsAt}
-                    {c.endsAt ? ` – ${c.endsAt}` : ""}
-                    {c.roomNo ? ` · ${c.roomNo}` : ""}
-                  </span>
-                </li>
-              ))}
-            </ul>
-          )}
-        </section>
-      </div>
-
-      {/* Desktop right panel — narrower, does not hide sidebar */}
-      <div
-        className={cn(
-          "hidden shrink-0 overflow-hidden border-l border-border transition-[width] duration-300 ease-out md:block",
-          panelEntered ? "" : "border-transparent",
-        )}
-        style={{ width: panelEntered ? PANEL_WIDTH : 0 }}
       >
         <div
           className={cn(
-            "flex h-full flex-col transition-transform duration-300 ease-out",
+            "space-y-8 transition-[max-width] duration-300 ease-out",
+            panelEntered ? "md:max-w-none" : "mx-auto max-w-2xl",
+          )}
+        >
+          <form action={updateAction} className="space-y-8">
+            <input type="hidden" name="id" value={course.id} />
+            <input type="hidden" name="semesterId" value={semesterId} />
+
+            {/* Title */}
+            <div className="space-y-1">
+              <textarea
+                name="title"
+                value={title}
+                onChange={(e) => {
+                  setTitle(e.target.value);
+                  const el = e.target;
+                  el.style.height = "auto";
+                  el.style.height = `${el.scrollHeight}px`;
+                }}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") e.preventDefault();
+                }}
+                ref={(el) => {
+                  if (el) {
+                    el.style.height = "auto";
+                    el.style.height = `${el.scrollHeight}px`;
+                  }
+                }}
+                placeholder="Untitled course"
+                rows={1}
+                className="w-full resize-none overflow-hidden bg-transparent text-3xl font-semibold tracking-tight text-foreground outline-none placeholder:text-muted-foreground/35"
+              />
+              {updateState.errors?.title?.[0] && (
+                <p className="text-xs text-destructive">
+                  {updateState.errors.title[0]}
+                </p>
+              )}
+            </div>
+
+            {/* Property rows */}
+            <div className="space-y-4">
+              {/* Semester */}
+              <div className="flex items-center gap-3">
+                <span className={labelClass}>Semester</span>
+                <Select
+                  value={semesterId}
+                  onValueChange={(v) => setSemesterId(v as string)}
+                  items={semesters.map((s) => ({
+                    value: s.id,
+                    label: s.label,
+                  }))}
+                >
+                  <SelectTrigger
+                    className={cn(
+                      "h-auto w-auto min-w-[140px] gap-1 border-0 bg-transparent px-0 py-1 text-base shadow-none",
+                      "hover:bg-transparent focus-visible:ring-0 focus-visible:border-transparent",
+                      "data-[popup-open]:bg-transparent",
+                    )}
+                  >
+                    <SelectValue placeholder="Select semester" />
+                  </SelectTrigger>
+                  <SelectContent className="min-w-[180px] py-1">
+                    {semesters.map((s) => (
+                      <SelectItem
+                        key={s.id}
+                        value={s.id}
+                        className="py-1.5 pl-2 pr-8 text-sm"
+                      >
+                        {s.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              {updateState.errors?.semesterId?.[0] && (
+                <p className="pl-[132px] text-xs text-destructive">
+                  {updateState.errors.semesterId[0]}
+                </p>
+              )}
+
+              {/* Course code */}
+              <div className="flex items-center gap-3">
+                <label htmlFor="courseCode" className={labelClass}>
+                  Course code
+                </label>
+                <input
+                  id="courseCode"
+                  name="courseCode"
+                  value={courseCode}
+                  onChange={(e) => setCourseCode(e.target.value)}
+                  placeholder="e.g. CSE 2201"
+                  autoComplete="off"
+                  className={fieldInput}
+                />
+              </div>
+              {updateState.errors?.courseCode?.[0] && (
+                <p className="pl-[132px] text-xs text-destructive">
+                  {updateState.errors.courseCode[0]}
+                </p>
+              )}
+
+              {/* Credit */}
+              <div className="flex items-center gap-3">
+                <label htmlFor="credit" className={labelClass}>
+                  Credit
+                </label>
+                <input
+                  id="credit"
+                  name="credit"
+                  type="number"
+                  step="0.5"
+                  min="0"
+                  value={credit}
+                  onChange={(e) => setCredit(e.target.value)}
+                  onBlur={() => {
+                    const n = parseFloat(credit);
+                    if (!Number.isNaN(n)) {
+                      setCredit(n.toFixed(1));
+                    }
+                  }}
+                  placeholder="3.0"
+                  autoComplete="off"
+                  className={cn(fieldInput, "max-w-[120px] tabular-nums")}
+                />
+              </div>
+              {updateState.errors?.credit?.[0] && (
+                <p className="pl-[132px] text-xs text-destructive">
+                  {updateState.errors.credit[0]}
+                </p>
+              )}
+
+              {/* Teacher */}
+              <div className="flex items-center gap-3">
+                <label htmlFor="teacher" className={labelClass}>
+                  Teacher
+                </label>
+                <input
+                  id="teacher"
+                  name="teacher"
+                  value={teacher}
+                  onChange={(e) => setTeacher(e.target.value)}
+                  placeholder="Dr. Rahman"
+                  autoComplete="off"
+                  className={fieldInput}
+                />
+              </div>
+
+              {/* Grade point */}
+              <div className="flex items-center gap-3">
+                <label htmlFor="gradePoint" className={labelClass}>
+                  Grade point
+                </label>
+                <input
+                  id="gradePoint"
+                  name="gradePoint"
+                  type="number"
+                  step="0.01"
+                  min="0"
+                  max="4"
+                  value={gradePoint}
+                  onChange={(e) => setGradePoint(e.target.value)}
+                  placeholder="e.g. 3.75"
+                  autoComplete="off"
+                  className={cn(fieldInput, "max-w-[120px] tabular-nums")}
+                />
+              </div>
+              {updateState.errors?.gradePoint?.[0] && (
+                <p className="pl-[132px] text-xs text-destructive">
+                  {updateState.errors.gradePoint[0]}
+                </p>
+              )}
+            </div>
+
+            {/* Classes */}
+            <div className="space-y-2">
+              <h2 className="text-sm font-medium text-foreground">Classes</h2>
+
+              {course.classes.length > 0 && (
+                <ul className="space-y-0.5">
+                  {course.classes.map((c) => (
+                    <li
+                      key={c.id}
+                      className="flex items-center gap-2 rounded px-2 py-1.5 text-sm hover:bg-muted/50"
+                    >
+                      <span className="min-w-0 flex-1 font-medium text-foreground">
+                        {DAY_OF_WEEK_LABELS[
+                          c.day as keyof typeof DAY_OF_WEEK_LABELS
+                        ] ?? c.day}
+                      </span>
+                      <span className="tabular-nums text-muted-foreground">
+                        {formatTimeLabel(c.startsAt)}
+                        {c.roomNo ? ` · ${c.roomNo}` : ""}
+                      </span>
+                    </li>
+                  ))}
+                </ul>
+              )}
+
+              {/* Live draft preview */}
+              {showDraftPreview && (
+                <div className="flex items-center gap-2 rounded px-2 py-1.5 bg-muted/40">
+                  <p className="min-w-0 flex-1 truncate text-sm font-medium text-foreground">
+                    {formatClassPreview(draft) || (
+                      <span className="text-muted-foreground">New class</span>
+                    )}
+                  </p>
+                </div>
+              )}
+
+              <button
+                type="button"
+                onClick={openPanel}
+                disabled={isAddingClass}
+                className="flex w-full items-center gap-2 rounded px-2 py-1.5 text-sm text-muted-foreground hover:bg-muted hover:text-foreground"
+              >
+                <Plus className="h-4 w-4" />
+                Add class
+              </button>
+            </div>
+
+            <div className="flex items-center gap-3 pt-1">
+              <Button
+                type="submit"
+                disabled={
+                  isUpdating ||
+                  !title.trim() ||
+                  !courseCode.trim() ||
+                  !credit ||
+                  !semesterId
+                }
+                className="w-full sm:w-auto"
+              >
+                {isUpdating ? "Saving…" : "Save changes"}
+              </Button>
+              {updateState.status === "error" &&
+                updateState.message &&
+                !updateState.errors && (
+                  <p className="text-xs text-destructive">
+                    {updateState.message}
+                  </p>
+                )}
+              {updateState.status === "success" && (
+                <p className="text-xs text-muted-foreground">
+                  {updateState.message}
+                </p>
+              )}
+            </div>
+          </form>
+        </div>
+      </div>
+
+      {/* Desktop right panel */}
+      <div
+        className={cn(
+          "hidden shrink-0 overflow-hidden transition-[width] duration-300 ease-out md:block",
+          panelEntered ? "w-1/2" : "w-0",
+        )}
+      >
+        <div
+          className={cn(
+            "h-full w-[50vw] max-w-full transition-transform duration-300 ease-out",
             panelEntered ? "translate-x-0" : "translate-x-full",
           )}
-          style={{ width: PANEL_WIDTH }}
         >
           {panelMounted && (
-            <ClassEditorPanel
-              courseId={course.id}
-              day={day}
-              roomNo={roomNo}
-              startsAt={startsAt}
-              endsAt={endsAt}
-              onDayChange={setDay}
-              onRoomNoChange={setRoomNo}
-              onStartsAtChange={setStartsAt}
-              onEndsAtChange={setEndsAt}
+            <ClassComposerPanel
+              draft={draft}
+              errors={classErrors}
+              onChange={(patch) => setDraft((prev) => ({ ...prev, ...patch }))}
               onClose={closePanel}
-              formAction={classAction}
-              state={classState}
-              isPending={isAddingClass}
+              variant="side"
             />
           )}
         </div>
@@ -369,7 +516,7 @@ export function CourseDetailView({
         />
         <div
           className={cn(
-            "absolute inset-x-0 bottom-0 flex max-h-[90vh] flex-col rounded-t-2xl bg-background shadow-xl transition-transform duration-300 ease-out",
+            "absolute inset-x-0 bottom-0 flex max-h-[90vh] flex-col overflow-hidden rounded-t-2xl bg-background shadow-xl transition-transform duration-300 ease-out",
             panelEntered ? "translate-y-0" : "translate-y-full",
           )}
         >
@@ -377,197 +524,16 @@ export function CourseDetailView({
             <div className="h-1 w-10 rounded-full bg-border" />
           </div>
           {panelMounted && (
-            <ClassEditorPanel
-              courseId={course.id}
-              day={day}
-              roomNo={roomNo}
-              startsAt={startsAt}
-              endsAt={endsAt}
-              onDayChange={setDay}
-              onRoomNoChange={setRoomNo}
-              onStartsAtChange={setStartsAt}
-              onEndsAtChange={setEndsAt}
+            <ClassComposerPanel
+              draft={draft}
+              errors={classErrors}
+              onChange={(patch) => setDraft((prev) => ({ ...prev, ...patch }))}
               onClose={closePanel}
-              formAction={classAction}
-              state={classState}
-              isPending={isAddingClass}
               variant="sheet"
             />
           )}
         </div>
       </div>
     </div>
-  );
-}
-
-function ClassEditorPanel({
-  courseId,
-  day,
-  roomNo,
-  startsAt,
-  endsAt,
-  onDayChange,
-  onRoomNoChange,
-  onStartsAtChange,
-  onEndsAtChange,
-  onClose,
-  formAction,
-  state,
-  isPending,
-  variant = "side",
-}: {
-  courseId: string;
-  day: string;
-  roomNo: string;
-  startsAt: string;
-  endsAt: string;
-  onDayChange: (v: string) => void;
-  onRoomNoChange: (v: string) => void;
-  onStartsAtChange: (v: string) => void;
-  onEndsAtChange: (v: string) => void;
-  onClose: () => void;
-  formAction: (payload: FormData) => void;
-  state: typeof initialActionState;
-  isPending: boolean;
-  variant?: "side" | "sheet";
-}) {
-  return (
-    <form
-      action={formAction}
-      className={cn("flex flex-1 flex-col", variant === "side" ? "h-full" : "")}
-    >
-      <input type="hidden" name="courseId" value={courseId} />
-      <input type="hidden" name="day" value={day} />
-
-      <div
-        className={cn(
-          "flex items-center justify-between border-b border-border",
-          variant === "side" ? "px-5 py-4" : "px-4 py-2",
-        )}
-      >
-        <h3 className="text-sm font-semibold text-foreground">Add class</h3>
-        <button
-          type="button"
-          onClick={onClose}
-          className="rounded p-1 text-muted-foreground hover:bg-muted hover:text-foreground"
-        >
-          <X className="h-4 w-4" />
-          <span className="sr-only">Close</span>
-        </button>
-      </div>
-
-      <div
-        className={cn(
-          "flex flex-1 flex-col gap-5 overflow-y-auto",
-          variant === "side" ? "px-5 py-5" : "px-4 py-4",
-        )}
-      >
-        <div className="space-y-1.5">
-          <label className="text-sm font-medium text-foreground">Day</label>
-          <Select value={day} onValueChange={(v) => onDayChange(v as string)}>
-            <SelectTrigger className="w-full">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              {dayOfWeekEnum.options.map((value) => (
-                <SelectItem key={value} value={value}>
-                  {DAY_OF_WEEK_LABELS[value]}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-          {state.errors?.day?.[0] && (
-            <p className="text-xs text-destructive">{state.errors.day[0]}</p>
-          )}
-        </div>
-
-        <div className="space-y-1.5">
-          <label
-            htmlFor="startsAt"
-            className="text-sm font-medium text-foreground"
-          >
-            Starts at
-          </label>
-          <input
-            id="startsAt"
-            name="startsAt"
-            type="time"
-            value={startsAt}
-            onChange={(e) => onStartsAtChange(e.target.value)}
-            className="h-8 w-full rounded-lg border border-input bg-transparent px-2.5 text-sm outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50"
-          />
-          {state.errors?.startsAt?.[0] && (
-            <p className="text-xs text-destructive">
-              {state.errors.startsAt[0]}
-            </p>
-          )}
-        </div>
-
-        <div className="space-y-1.5">
-          <label
-            htmlFor="endsAt"
-            className="text-sm font-medium text-foreground"
-          >
-            Ends at
-          </label>
-          <input
-            id="endsAt"
-            name="endsAt"
-            type="time"
-            value={endsAt}
-            onChange={(e) => onEndsAtChange(e.target.value)}
-            className="h-8 w-full rounded-lg border border-input bg-transparent px-2.5 text-sm outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50"
-          />
-          {state.errors?.endsAt?.[0] && (
-            <p className="text-xs text-destructive">{state.errors.endsAt[0]}</p>
-          )}
-        </div>
-
-        <div className="space-y-1.5">
-          <label
-            htmlFor="roomNo"
-            className="text-sm font-medium text-foreground"
-          >
-            Room
-          </label>
-          <input
-            id="roomNo"
-            name="roomNo"
-            value={roomNo}
-            onChange={(e) => onRoomNoChange(e.target.value)}
-            placeholder="Optional"
-            className="h-8 w-full rounded-lg border border-input bg-transparent px-2.5 text-sm outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50"
-          />
-        </div>
-
-        {state.status === "error" && state.message && !state.errors && (
-          <p className="text-sm text-destructive">{state.message}</p>
-        )}
-      </div>
-
-      <div
-        className={cn(
-          "flex shrink-0 gap-2 border-t border-border",
-          variant === "side" ? "px-5 py-4" : "px-4 py-3",
-        )}
-      >
-        <Button
-          type="button"
-          variant="outline"
-          className="flex-1"
-          onClick={onClose}
-          disabled={isPending}
-        >
-          Cancel
-        </Button>
-        <Button
-          type="submit"
-          className="flex-1"
-          disabled={isPending || !startsAt}
-        >
-          {isPending ? "Adding…" : "Add class"}
-        </Button>
-      </div>
-    </form>
   );
 }
