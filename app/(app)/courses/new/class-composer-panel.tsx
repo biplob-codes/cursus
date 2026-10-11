@@ -62,12 +62,12 @@ export function ClassComposerPanel({
       {/* Body */}
       <div
         className={cn(
-          "flex flex-1 flex-col gap-6 overflow-y-auto pb-10",
+          "flex flex-1 flex-col gap-7 overflow-y-auto pb-10",
           variant === "side" ? "px-6" : "px-4",
         )}
       >
         {/* Day */}
-        <div className="space-y-2">
+        <div className="flex flex-col gap-2.5">
           <label className="text-sm font-medium text-foreground">Day</label>
           <Select
             value={draft.day}
@@ -98,7 +98,7 @@ export function ClassComposerPanel({
         </div>
 
         {/* Starts at */}
-        <div className="space-y-2">
+        <div className="flex flex-col gap-2.5">
           <label className="text-sm font-medium text-foreground">
             Starts at
           </label>
@@ -113,7 +113,7 @@ export function ClassComposerPanel({
         </div>
 
         {/* Room */}
-        <div className="space-y-2">
+        <div className="flex flex-col gap-2.5">
           <label className="text-sm font-medium text-foreground">Room</label>
           <input
             value={draft.roomNo}
