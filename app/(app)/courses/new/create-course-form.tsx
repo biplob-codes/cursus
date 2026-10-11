@@ -297,6 +297,12 @@ export function CreateCourseForm({
                   min="0"
                   value={credit}
                   onChange={(e) => setCredit(e.target.value)}
+                  onBlur={() => {
+                    const n = parseFloat(credit);
+                    if (!Number.isNaN(n)) {
+                      setCredit(n.toFixed(1));
+                    }
+                  }}
                   placeholder="3.0"
                   autoComplete="off"
                   className={cn(fieldInput, "max-w-[120px] tabular-nums")}
@@ -307,7 +313,6 @@ export function CreateCourseForm({
                   {state.errors.credit[0]}
                 </p>
               )}
-
               {/* Teacher */}
               <div className="flex items-center gap-3">
                 <label htmlFor="teacher" className={labelClass}>
