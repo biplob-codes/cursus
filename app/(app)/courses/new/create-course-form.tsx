@@ -4,37 +4,20 @@ import { useActionState, useEffect, useState } from "react";
 import Link from "next/link";
 import { createCourse } from "@/actions/course";
 import { initialActionState } from "@/actions/action-state";
-import {
-  ClassInput,
-  classInputSchema,
-  DAY_OF_WEEK_LABELS,
-} from "@/schema/course";
+import { ClassInput, classInputSchema } from "@/schema/course";
 import { Button } from "@/ui/button";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/ui/select";
 import { cn } from "@/lib/utils";
-import { Plus, X } from "lucide-react";
 import { useAppChrome } from "@/components/app-chrome-context";
 import {
   ClassComposerPanel,
   emptyClassDraft,
   type ClassDraft,
 } from "@/components/class-composer-panel";
-import {
-  fieldInput,
-  labelClass,
-  formatClassPreview,
-} from "@/components/course-form-shared";
+import { CourseTitleField } from "@/components/course-title-field";
+import { CoursePropertyFields } from "@/components/course-property-fields";
+import { CourseClassesSection } from "@/components/course-classes-section";
 
-type SemesterOption = {
-  id: string;
-  label: string;
-};
+type SemesterOption = { id: string; label: string };
 
 const PANEL_MS = 300;
 
@@ -77,7 +60,6 @@ export function CreateCourseForm({
       });
       return () => cancelAnimationFrame(id);
     }
-
     setPanelEntered(false);
     const t = setTimeout(() => {
       setPanelMounted(false);
@@ -144,8 +126,6 @@ export function CreateCourseForm({
     setPanelOpen(false);
   }
 
-  const showDraftPreview = panelOpen && draft;
-
   if (semesters.length === 0) {
     return (
       <div className="mx-auto w-full max-w-2xl space-y-4 px-4 py-6">
@@ -181,234 +161,40 @@ export function CreateCourseForm({
           )}
         >
           <form action={formAction} className="space-y-8">
-            {/* Title */}
-            <div className="space-y-1">
-              <textarea
-                name="title"
-                value={title}
-                onChange={(e) => {
-                  setTitle(e.target.value);
-                  const el = e.target;
-                  el.style.height = "auto";
-                  el.style.height = `${el.scrollHeight}px`;
-                }}
-                onKeyDown={(e) => {
-                  if (e.key === "Enter") e.preventDefault();
-                }}
-                ref={(el) => {
-                  if (el) {
-                    el.style.height = "auto";
-                    el.style.height = `${el.scrollHeight}px`;
-                  }
-                }}
-                placeholder="Untitled course"
-                rows={1}
-                autoFocus
-                className="w-full resize-none overflow-hidden bg-transparent text-3xl font-semibold tracking-tight text-foreground outline-none placeholder:text-muted-foreground/35"
-              />
-              {state.errors?.title?.[0] && (
-                <p className="text-xs text-destructive">
-                  {state.errors.title[0]}
-                </p>
-              )}
-            </div>
+            <CourseTitleField
+              value={title}
+              onChange={setTitle}
+              error={state.errors?.title?.[0]}
+              autoFocus
+            />
 
-            {/* Property rows */}
-            <div className="space-y-4">
-              <div className="flex items-center gap-3">
-                <span className={labelClass}>Semester</span>
-                <Select
-                  value={semesterId}
-                  onValueChange={(v) => setSemesterId(v as string)}
-                  items={semesters.map((s) => ({
-                    value: s.id,
-                    label: s.label,
-                  }))}
-                >
-                  <SelectTrigger
-                    className={cn(
-                      "h-auto w-auto min-w-[140px] gap-1 border-0 bg-transparent px-0 py-1 text-base shadow-none",
-                      "hover:bg-transparent focus-visible:ring-0 focus-visible:border-transparent",
-                      "data-[popup-open]:bg-transparent",
-                    )}
-                  >
-                    <SelectValue placeholder="Select semester" />
-                  </SelectTrigger>
-                  <SelectContent className="min-w-[180px] py-1">
-                    {semesters.map((s) => (
-                      <SelectItem
-                        key={s.id}
-                        value={s.id}
-                        className="py-1.5 pl-2 pr-8 text-sm"
-                      >
-                        {s.label}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-                <input type="hidden" name="semesterId" value={semesterId} />
-              </div>
-              {state.errors?.semesterId?.[0] && (
-                <p className="pl-[132px] text-xs text-destructive">
-                  {state.errors.semesterId[0]}
-                </p>
-              )}
+            <CoursePropertyFields
+              semesterId={semesterId}
+              onSemesterChange={setSemesterId}
+              semesters={semesters}
+              courseCode={courseCode}
+              onCourseCodeChange={setCourseCode}
+              credit={credit}
+              onCreditChange={setCredit}
+              teacher={teacher}
+              onTeacherChange={setTeacher}
+              gradePoint={gradePoint}
+              onGradePointChange={setGradePoint}
+              errors={state.errors}
+              includeHiddenSemester
+            />
 
-              <div className="flex items-center gap-3">
-                <label htmlFor="courseCode" className={labelClass}>
-                  Course code
-                </label>
-                <input
-                  id="courseCode"
-                  name="courseCode"
-                  value={courseCode}
-                  onChange={(e) => setCourseCode(e.target.value)}
-                  placeholder="e.g. CSE 2201"
-                  autoComplete="off"
-                  className={fieldInput}
-                />
-              </div>
-              {state.errors?.courseCode?.[0] && (
-                <p className="pl-[132px] text-xs text-destructive">
-                  {state.errors.courseCode[0]}
-                </p>
-              )}
-
-              <div className="flex items-center gap-3">
-                <label htmlFor="credit" className={labelClass}>
-                  Credit
-                </label>
-                <input
-                  id="credit"
-                  name="credit"
-                  type="number"
-                  step="0.5"
-                  min="0"
-                  value={credit}
-                  onChange={(e) => setCredit(e.target.value)}
-                  onBlur={() => {
-                    const n = parseFloat(credit);
-                    if (!Number.isNaN(n)) setCredit(n.toFixed(1));
-                  }}
-                  placeholder="3.0"
-                  autoComplete="off"
-                  className={cn(fieldInput, "max-w-[120px] tabular-nums")}
-                />
-              </div>
-              {state.errors?.credit?.[0] && (
-                <p className="pl-[132px] text-xs text-destructive">
-                  {state.errors.credit[0]}
-                </p>
-              )}
-
-              <div className="flex items-center gap-3">
-                <label htmlFor="teacher" className={labelClass}>
-                  Teacher
-                </label>
-                <input
-                  id="teacher"
-                  name="teacher"
-                  value={teacher}
-                  onChange={(e) => setTeacher(e.target.value)}
-                  placeholder="Dr. Rahman"
-                  autoComplete="off"
-                  className={fieldInput}
-                />
-              </div>
-
-              <div className="flex items-center gap-3">
-                <label htmlFor="gradePoint" className={labelClass}>
-                  Grade point
-                </label>
-                <input
-                  id="gradePoint"
-                  name="gradePoint"
-                  type="number"
-                  step="0.01"
-                  min="0"
-                  max="4"
-                  value={gradePoint}
-                  onChange={(e) => setGradePoint(e.target.value)}
-                  placeholder="e.g. 3.75"
-                  autoComplete="off"
-                  className={cn(fieldInput, "max-w-[120px] tabular-nums")}
-                />
-              </div>
-              {state.errors?.gradePoint?.[0] && (
-                <p className="pl-[132px] text-xs text-destructive">
-                  {state.errors.gradePoint[0]}
-                </p>
-              )}
-            </div>
-
-            {/* Classes */}
-            <div className="space-y-2">
-              <h2 className="text-sm font-medium text-foreground">Classes</h2>
-
-              {classes.length > 0 && (
-                <ul className="space-y-0.5">
-                  {classes.map((c, index) => {
-                    let timeLabel = c.startsAt;
-                    if (c.startsAt) {
-                      const [hStr, mStr] = c.startsAt.split(":");
-                      const hour24 = parseInt(hStr, 10);
-                      const minute = parseInt(mStr, 10) || 0;
-                      const period = hour24 >= 12 ? "PM" : "AM";
-                      const hour12 = hour24 % 12 || 12;
-                      timeLabel = `${hour12}:${String(minute).padStart(2, "0")} ${period}`;
-                    }
-
-                    return (
-                      <li
-                        key={`${c.day}-${c.startsAt}-${index}`}
-                        className="flex cursor-pointer items-center gap-2 rounded px-2 py-1.5 text-sm hover:bg-muted/50"
-                        onClick={() => openPanelForEdit(index)}
-                      >
-                        <span className="min-w-0 flex-1 font-medium text-foreground">
-                          {DAY_OF_WEEK_LABELS[c.day]}
-                        </span>
-                        <span className="tabular-nums text-muted-foreground">
-                          {timeLabel}
-                          {c.roomNo ? ` · ${c.roomNo}` : ""}
-                        </span>
-                        <button
-                          type="button"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            setClasses((prev) =>
-                              prev.filter((_, i) => i !== index),
-                            );
-                          }}
-                          className="rounded p-0.5 text-muted-foreground hover:bg-muted hover:text-foreground"
-                          aria-label="Remove class"
-                        >
-                          <X className="h-3.5 w-3.5" />
-                        </button>
-                      </li>
-                    );
-                  })}
-                </ul>
-              )}
-
-              {showDraftPreview && (
-                <div className="flex items-center gap-2 rounded bg-muted/40 px-2 py-1.5">
-                  <p className="min-w-0 flex-1 truncate text-sm font-medium text-foreground">
-                    {formatClassPreview(draft) || (
-                      <span className="text-muted-foreground">New class</span>
-                    )}
-                  </p>
-                </div>
-              )}
-
-              <button
-                type="button"
-                onClick={openPanelForNew}
-                className="flex w-full items-center gap-2 rounded px-2 py-1.5 text-sm text-muted-foreground hover:bg-muted hover:text-foreground"
-              >
-                <Plus className="h-4 w-4" />
-                Add class
-              </button>
-            </div>
+            <CourseClassesSection
+              classes={classes}
+              draft={draft}
+              showDraftPreview={panelOpen && editingIndex === null}
+              onAddClick={openPanelForNew}
+              onItemClick={openPanelForEdit}
+              onRemoveClick={(index) =>
+                setClasses((prev) => prev.filter((_, i) => i !== index))
+              }
+              editingIndex={editingIndex}
+            />
 
             <input
               type="hidden"
@@ -438,7 +224,7 @@ export function CreateCourseForm({
         </div>
       </div>
 
-      {/* Desktop right panel */}
+      {/* Desktop panel */}
       <div
         className={cn(
           "hidden shrink-0 overflow-hidden transition-[width] duration-300 ease-out md:block",
@@ -463,7 +249,7 @@ export function CreateCourseForm({
         </div>
       </div>
 
-      {/* Mobile bottom sheet */}
+      {/* Mobile sheet */}
       <div
         className={cn(
           "fixed inset-0 z-50 md:hidden",
