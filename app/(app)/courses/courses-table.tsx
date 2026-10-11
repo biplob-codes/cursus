@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { BookOpen, Hash, User, GraduationCap } from "lucide-react";
+import { BookOpen, Sigma, User, GraduationCap } from "lucide-react";
 
 type CourseRow = {
   id: string;
@@ -13,6 +13,15 @@ type CourseRow = {
     year: number;
   };
 };
+
+function formatCredit(credit: number): string {
+  return credit.toFixed(1);
+}
+
+function formatGpa(gradePoint: number | null): string {
+  if (gradePoint === null || gradePoint === 0) return "N/A";
+  return gradePoint.toFixed(2);
+}
 
 export function CoursesTable({ courses }: { courses: CourseRow[] }) {
   if (courses.length === 0) {
@@ -36,20 +45,14 @@ export function CoursesTable({ courses }: { courses: CourseRow[] }) {
                 {course.title}
               </p>
               <p className="mt-0.5 text-xs text-muted-foreground">
-                {course.credit} cr
+                {formatCredit(course.credit)} cr
                 {course.teacher ? ` · ${course.teacher}` : ""}
               </p>
             </div>
 
-            {course.gradePoint !== null ? (
-              <span className="shrink-0 text-sm tabular-nums text-muted-foreground">
-                {course.gradePoint.toFixed(2)}
-              </span>
-            ) : (
-              <span className="shrink-0 text-sm text-muted-foreground/50">
-                —
-              </span>
-            )}
+            <span className="shrink-0 text-sm tabular-nums text-muted-foreground">
+              {formatGpa(course.gradePoint)}
+            </span>
           </Link>
         ))}
       </div>
@@ -67,7 +70,7 @@ export function CoursesTable({ courses }: { courses: CourseRow[] }) {
               </th>
               <th className="px-2 py-2 text-left">
                 <span className="inline-flex items-center gap-1.5 text-xs font-medium text-muted-foreground">
-                  <Hash className="h-3.5 w-3.5" strokeWidth={1.8} />
+                  <Sigma className="h-3.5 w-3.5" strokeWidth={1.8} />
                   Credit hour
                 </span>
               </th>
@@ -100,7 +103,7 @@ export function CoursesTable({ courses }: { courses: CourseRow[] }) {
                   </Link>
                 </td>
                 <td className="px-2 py-2 tabular-nums text-muted-foreground">
-                  {course.credit}
+                  {formatCredit(course.credit)}
                 </td>
                 <td className="px-2 py-2 text-muted-foreground">
                   {course.teacher ? (
@@ -110,11 +113,7 @@ export function CoursesTable({ courses }: { courses: CourseRow[] }) {
                   )}
                 </td>
                 <td className="px-2 py-2 tabular-nums text-muted-foreground">
-                  {course.gradePoint !== null ? (
-                    course.gradePoint.toFixed(2)
-                  ) : (
-                    <span className="text-muted-foreground/50">—</span>
-                  )}
+                  {formatGpa(course.gradePoint)}
                 </td>
               </tr>
             ))}
