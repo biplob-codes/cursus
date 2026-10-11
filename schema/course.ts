@@ -100,3 +100,9 @@ export const createClassSchema = classInputSchema.extend({
 });
 
 export type CreateClassInput = z.infer<typeof createClassSchema>;
+export const updateClassSchema = classInputSchema.extend({
+  id: z.string().uuid(),
+  courseId: z.string().uuid(),
+});
+
+export type UpdateClassInput = z.infer<typeof updateClassSchema>;

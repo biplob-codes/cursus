@@ -8,6 +8,7 @@ import { getSessionUser } from "@/lib/session";
 import {
   createClassSchema,
   createCourseSchema,
+  updateClassSchema,
   updateCourseSchema,
 } from "@/schema/course";
 
@@ -248,4 +249,69 @@ export async function createClass(
   revalidatePath(`/courses/${courseId}`);
   revalidatePath("/courses");
   return { status: "success", message: "Class added." };
+}
+export async function updateClass(
+  _prevState: ActionState,
+  formData: FormData,
+): Promise<ActionState> {
+  const user = await getSessionUser();
+  if (!user?.id) {
+    return {
+      status: "error",
+      message: "You must be signed in to update a class.",
+    };
+  }
+
+  const parsed = updateClassSchema.safeParse({
+    id: formData.get("id"),
+    courseId: formData.get("courseId"),
+    day: formData.get("day"),
+    roomNo: formData.get("roomNo"),
+    startsAt: formData.get("startsAt"),
+    endsAt: formData.get("endsAt"),
+  });
+
+  if (!parsed.success) {
+    return {
+      status: "error",
+      message: "Fix the errors below",
+      errors: parsed.error.flatten().fieldErrors,
+    };
+  }
+
+  const { id, courseId, day, roomNo, startsAt, endsAt } = parsed.data;
+
+  const existing = await prisma.class.findFirst({
+    where: {
+      id,
+      courseId,
+      course: { semester: { userId: user.id } },
+    },
+    select: { id: true },
+  });
+
+  if (!existing) {
+    return { status: "error", message: "Class not found." };
+  }
+
+  try {
+    await prisma.class.update({
+      where: { id },
+      data: {
+        day,
+        roomNo: roomNo ?? null,
+        startsAt,
+        endsAt: endsAt ?? null,
+      },
+    });
+  } catch {
+    return {
+      status: "error",
+      message: "Couldn't update the class. Try again.",
+    };
+  }
+
+  revalidatePath(`/courses/${courseId}`);
+  revalidatePath("/courses");
+  return { status: "success", message: "Class updated." };
 }

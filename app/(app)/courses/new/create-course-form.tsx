@@ -1,19 +1,9 @@
 "use client";
 
-import { initialActionState } from "@/actions/action-state";
+import { useActionState, useEffect, useState } from "react";
+import Link from "next/link";
 import { createCourse } from "@/actions/course";
-import { useAppChrome } from "@/components/app-chrome-context";
-import {
-  ClassComposerPanel,
-  emptyClassDraft,
-  type ClassDraft,
-} from "@/components/class-composer-panel";
-import {
-  fieldInput,
-  formatClassPreview,
-  labelClass,
-} from "@/components/course-form-shared";
-import { cn } from "@/lib/utils";
+import { initialActionState } from "@/actions/action-state";
 import {
   ClassInput,
   classInputSchema,
@@ -27,18 +17,26 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/ui/select";
+import { cn } from "@/lib/utils";
 import { Plus, X } from "lucide-react";
-import Link from "next/link";
-import { useActionState, useEffect, useState } from "react";
+import { useAppChrome } from "@/components/app-chrome-context";
+import {
+  ClassComposerPanel,
+  emptyClassDraft,
+  type ClassDraft,
+} from "@/components/class-composer-panel";
+import {
+  fieldInput,
+  labelClass,
+  formatClassPreview,
+} from "@/components/course-form-shared";
+
 type SemesterOption = {
   id: string;
   label: string;
 };
 
 const PANEL_MS = 300;
-
- 
- 
 
 export function CreateCourseForm({
   semesters,
@@ -59,6 +57,7 @@ export function CreateCourseForm({
   const [classErrors, setClassErrors] = useState<
     Partial<Record<"day" | "startsAt" | "endsAt" | "roomNo", string>>
   >({});
+  const [editingIndex, setEditingIndex] = useState<number | null>(null);
 
   const [state, formAction, isPending] = useActionState(
     createCourse,
@@ -97,30 +96,51 @@ export function CreateCourseForm({
     return parsed.success ? parsed.data : null;
   }
 
-  function commitDraftIfValid() {
+  function commitDraftIfValid(): boolean {
     const parsed = tryParseDraft(draft);
-    if (!parsed) return;
-    setClasses((prev) => [...prev, parsed]);
+    if (!parsed) return false;
+
+    if (editingIndex !== null) {
+      setClasses((prev) =>
+        prev.map((item, i) => (i === editingIndex ? parsed : item)),
+      );
+    } else {
+      setClasses((prev) => [...prev, parsed]);
+    }
+    return true;
   }
 
-  function startFreshDraft() {
-    setDraft(emptyClassDraft);
-    setClassErrors({});
-  }
-
-  function openPanel() {
-    if (panelOpen) {
+  function openPanelForNew() {
+    if (panelOpen && editingIndex === null) {
       commitDraftIfValid();
-      startFreshDraft();
+      setDraft(emptyClassDraft);
+      setClassErrors({});
       return;
     }
-    startFreshDraft();
+    setEditingIndex(null);
+    setDraft(emptyClassDraft);
+    setClassErrors({});
+    setPanelOpen(true);
+  }
+
+  function openPanelForEdit(index: number) {
+    const c = classes[index];
+    setEditingIndex(index);
+    setDraft({
+      day: c.day,
+      roomNo: c.roomNo ?? "",
+      startsAt: c.startsAt,
+      endsAt: c.endsAt ?? "",
+    });
+    setClassErrors({});
     setPanelOpen(true);
   }
 
   function closePanel() {
     commitDraftIfValid();
-    startFreshDraft();
+    setEditingIndex(null);
+    setDraft(emptyClassDraft);
+    setClassErrors({});
     setPanelOpen(false);
   }
 
@@ -147,7 +167,6 @@ export function CreateCourseForm({
 
   return (
     <div className="flex h-full min-h-0 w-full overflow-hidden">
-      {/* Main form column */}
       <div
         className={cn(
           "min-w-0 flex-1 overflow-y-auto transition-[width] duration-300 ease-out",
@@ -196,7 +215,6 @@ export function CreateCourseForm({
 
             {/* Property rows */}
             <div className="space-y-4">
-              {/* Semester */}
               <div className="flex items-center gap-3">
                 <span className={labelClass}>Semester</span>
                 <Select
@@ -236,7 +254,6 @@ export function CreateCourseForm({
                 </p>
               )}
 
-              {/* Course code */}
               <div className="flex items-center gap-3">
                 <label htmlFor="courseCode" className={labelClass}>
                   Course code
@@ -257,7 +274,6 @@ export function CreateCourseForm({
                 </p>
               )}
 
-              {/* Credit */}
               <div className="flex items-center gap-3">
                 <label htmlFor="credit" className={labelClass}>
                   Credit
@@ -272,9 +288,7 @@ export function CreateCourseForm({
                   onChange={(e) => setCredit(e.target.value)}
                   onBlur={() => {
                     const n = parseFloat(credit);
-                    if (!Number.isNaN(n)) {
-                      setCredit(n.toFixed(1));
-                    }
+                    if (!Number.isNaN(n)) setCredit(n.toFixed(1));
                   }}
                   placeholder="3.0"
                   autoComplete="off"
@@ -286,7 +300,7 @@ export function CreateCourseForm({
                   {state.errors.credit[0]}
                 </p>
               )}
-              {/* Teacher */}
+
               <div className="flex items-center gap-3">
                 <label htmlFor="teacher" className={labelClass}>
                   Teacher
@@ -302,7 +316,6 @@ export function CreateCourseForm({
                 />
               </div>
 
-              {/* Grade point */}
               <div className="flex items-center gap-3">
                 <label htmlFor="gradePoint" className={labelClass}>
                   Grade point
@@ -348,7 +361,8 @@ export function CreateCourseForm({
                     return (
                       <li
                         key={`${c.day}-${c.startsAt}-${index}`}
-                        className="flex items-center gap-2 rounded px-2 py-1.5 text-sm hover:bg-muted/50"
+                        className="flex cursor-pointer items-center gap-2 rounded px-2 py-1.5 text-sm hover:bg-muted/50"
+                        onClick={() => openPanelForEdit(index)}
                       >
                         <span className="min-w-0 flex-1 font-medium text-foreground">
                           {DAY_OF_WEEK_LABELS[c.day]}
@@ -359,11 +373,12 @@ export function CreateCourseForm({
                         </span>
                         <button
                           type="button"
-                          onClick={() =>
+                          onClick={(e) => {
+                            e.stopPropagation();
                             setClasses((prev) =>
                               prev.filter((_, i) => i !== index),
-                            )
-                          }
+                            );
+                          }}
                           className="rounded p-0.5 text-muted-foreground hover:bg-muted hover:text-foreground"
                           aria-label="Remove class"
                         >
@@ -375,9 +390,8 @@ export function CreateCourseForm({
                 </ul>
               )}
 
-              {/* Live draft preview */}
               {showDraftPreview && (
-                <div className="flex items-center gap-2 rounded px-2 py-1.5 bg-muted/40">
+                <div className="flex items-center gap-2 rounded bg-muted/40 px-2 py-1.5">
                   <p className="min-w-0 flex-1 truncate text-sm font-medium text-foreground">
                     {formatClassPreview(draft) || (
                       <span className="text-muted-foreground">New class</span>
@@ -388,7 +402,7 @@ export function CreateCourseForm({
 
               <button
                 type="button"
-                onClick={openPanel}
+                onClick={openPanelForNew}
                 className="flex w-full items-center gap-2 rounded px-2 py-1.5 text-sm text-muted-foreground hover:bg-muted hover:text-foreground"
               >
                 <Plus className="h-4 w-4" />

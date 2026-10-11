@@ -1,7 +1,7 @@
 "use client";
 
 import { useActionState, useEffect, useState } from "react";
-import { updateCourse, createClass } from "@/actions/course";
+import { updateCourse, createClass, updateClass } from "@/actions/course";
 import { initialActionState } from "@/actions/action-state";
 import { classInputSchema, DAY_OF_WEEK_LABELS } from "@/schema/course";
 import { Button } from "@/ui/button";
@@ -80,9 +80,15 @@ export function CourseDetailView({
   const [classErrors, setClassErrors] = useState<
     Partial<Record<"day" | "startsAt" | "endsAt" | "roomNo", string>>
   >({});
+  const [editingClassId, setEditingClassId] = useState<string | null>(null);
 
-  const [classState, classAction, isAddingClass] = useActionState(
-    createClass,
+  const [classState, classAction, isClassPending] = useActionState(
+    async (prev: typeof initialActionState, formData: FormData) => {
+      if (formData.get("id")) {
+        return updateClass(prev, formData);
+      }
+      return createClass(prev, formData);
+    },
     initialActionState,
   );
 
@@ -113,13 +119,34 @@ export function CourseDetailView({
       setPanelOpen(false);
       setDraft(emptyClassDraft);
       setClassErrors({});
+      setEditingClassId(null);
     }
   }, [classState]);
+
+  function openPanelForNew() {
+    setEditingClassId(null);
+    setDraft(emptyClassDraft);
+    setClassErrors({});
+    setPanelOpen(true);
+  }
+
+  function openPanelForEdit(c: ClassItem) {
+    setEditingClassId(c.id);
+    setDraft({
+      day: c.day as ClassDraft["day"],
+      roomNo: c.roomNo ?? "",
+      startsAt: c.startsAt,
+      endsAt: c.endsAt ?? "",
+    });
+    setClassErrors({});
+    setPanelOpen(true);
+  }
 
   function trySubmitDraft() {
     if (!draft.startsAt.trim()) {
       setDraft(emptyClassDraft);
       setClassErrors({});
+      setEditingClassId(null);
       return;
     }
 
@@ -148,19 +175,11 @@ export function CourseDetailView({
     if (parsed.data.endsAt) formData.set("endsAt", parsed.data.endsAt);
     if (parsed.data.roomNo) formData.set("roomNo", parsed.data.roomNo);
 
-    classAction(formData);
-  }
-
-  function openPanel() {
-    if (panelOpen) {
-      trySubmitDraft();
-      setDraft(emptyClassDraft);
-      setClassErrors({});
-      return;
+    if (editingClassId) {
+      formData.set("id", editingClassId);
     }
-    setDraft(emptyClassDraft);
-    setClassErrors({});
-    setPanelOpen(true);
+
+    classAction(formData);
   }
 
   function closePanel() {
@@ -172,7 +191,6 @@ export function CourseDetailView({
 
   return (
     <div className="flex h-full min-h-0 w-full overflow-hidden">
-      {/* Main form column */}
       <div
         className={cn(
           "min-w-0 flex-1 overflow-y-auto transition-[width] duration-300 ease-out",
@@ -223,7 +241,6 @@ export function CourseDetailView({
 
             {/* Property rows */}
             <div className="space-y-4">
-              {/* Semester */}
               <div className="flex items-center gap-3">
                 <span className={labelClass}>Semester</span>
                 <Select
@@ -262,7 +279,6 @@ export function CourseDetailView({
                 </p>
               )}
 
-              {/* Course code */}
               <div className="flex items-center gap-3">
                 <label htmlFor="courseCode" className={labelClass}>
                   Course code
@@ -283,7 +299,6 @@ export function CourseDetailView({
                 </p>
               )}
 
-              {/* Credit */}
               <div className="flex items-center gap-3">
                 <label htmlFor="credit" className={labelClass}>
                   Credit
@@ -298,9 +313,7 @@ export function CourseDetailView({
                   onChange={(e) => setCredit(e.target.value)}
                   onBlur={() => {
                     const n = parseFloat(credit);
-                    if (!Number.isNaN(n)) {
-                      setCredit(n.toFixed(1));
-                    }
+                    if (!Number.isNaN(n)) setCredit(n.toFixed(1));
                   }}
                   placeholder="3.0"
                   autoComplete="off"
@@ -313,7 +326,6 @@ export function CourseDetailView({
                 </p>
               )}
 
-              {/* Teacher */}
               <div className="flex items-center gap-3">
                 <label htmlFor="teacher" className={labelClass}>
                   Teacher
@@ -329,7 +341,6 @@ export function CourseDetailView({
                 />
               </div>
 
-              {/* Grade point */}
               <div className="flex items-center gap-3">
                 <label htmlFor="gradePoint" className={labelClass}>
                   Grade point
@@ -364,7 +375,8 @@ export function CourseDetailView({
                   {course.classes.map((c) => (
                     <li
                       key={c.id}
-                      className="flex items-center gap-2 rounded px-2 py-1.5 text-sm hover:bg-muted/50"
+                      className="flex cursor-pointer items-center gap-2 rounded px-2 py-1.5 text-sm hover:bg-muted/50"
+                      onClick={() => openPanelForEdit(c)}
                     >
                       <span className="min-w-0 flex-1 font-medium text-foreground">
                         {DAY_OF_WEEK_LABELS[
@@ -380,9 +392,8 @@ export function CourseDetailView({
                 </ul>
               )}
 
-              {/* Live draft preview */}
               {showDraftPreview && (
-                <div className="flex items-center gap-2 rounded px-2 py-1.5 bg-muted/40">
+                <div className="flex items-center gap-2 rounded bg-muted/40 px-2 py-1.5">
                   <p className="min-w-0 flex-1 truncate text-sm font-medium text-foreground">
                     {formatClassPreview(draft) || (
                       <span className="text-muted-foreground">New class</span>
@@ -393,8 +404,8 @@ export function CourseDetailView({
 
               <button
                 type="button"
-                onClick={openPanel}
-                disabled={isAddingClass}
+                onClick={openPanelForNew}
+                disabled={isClassPending}
                 className="flex w-full items-center gap-2 rounded px-2 py-1.5 text-sm text-muted-foreground hover:bg-muted hover:text-foreground"
               >
                 <Plus className="h-4 w-4" />
