@@ -22,6 +22,12 @@ type AppChromeContextValue = {
   openTaskPanel: () => void;
   /** Close the task panel and restore the left sidebar. */
   closeTaskPanel: () => void;
+  /**
+   * When true, main content padding is removed so a right panel
+   * can sit edge-to-edge. Does NOT hide the left sidebar.
+   */
+  contentFlush: boolean;
+  setContentFlush: (flush: boolean) => void;
   /** Mobile drawer open state */
   mobileOpen: boolean;
   setMobileOpen: (open: boolean) => void;
@@ -35,6 +41,7 @@ export function AppChromeProvider({ children }: { children: ReactNode }) {
   const pathname = usePathname();
   const [sidebarHidden, setSidebarHidden] = useState(false);
   const [taskPanelOpen, setTaskPanelOpen] = useState(false);
+  const [contentFlush, setContentFlush] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
 
   // Soft navigations keep this provider mounted.
@@ -42,6 +49,7 @@ export function AppChromeProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     setTaskPanelOpen(false);
     setSidebarHidden(false);
+    setContentFlush(false);
     setMobileOpen(false);
   }, [pathname]);
 
@@ -71,6 +79,8 @@ export function AppChromeProvider({ children }: { children: ReactNode }) {
       setTaskPanelOpen,
       openTaskPanel,
       closeTaskPanel,
+      contentFlush,
+      setContentFlush,
       mobileOpen,
       setMobileOpen,
       toggleMobile,
@@ -81,6 +91,7 @@ export function AppChromeProvider({ children }: { children: ReactNode }) {
       taskPanelOpen,
       openTaskPanel,
       closeTaskPanel,
+      contentFlush,
       mobileOpen,
       toggleMobile,
       closeMobile,

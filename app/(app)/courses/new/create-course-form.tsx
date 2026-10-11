@@ -1,6 +1,6 @@
 "use client";
 
-import { useActionState, useEffect, useMemo, useState } from "react";
+import { useActionState, useEffect, useState } from "react";
 import Link from "next/link";
 import { createCourse } from "@/actions/course";
 import { initialActionState } from "@/actions/action-state";
@@ -19,6 +19,7 @@ import {
 } from "@/ui/select";
 import { cn } from "@/lib/utils";
 import { Plus, X } from "lucide-react";
+import { useAppChrome } from "@/components/app-chrome-context";
 import { ClassComposerPanel, type ClassDraft } from "./class-composer-panel";
 
 type SemesterOption = {
@@ -71,6 +72,8 @@ export function CreateCourseForm({
 }: {
   semesters: SemesterOption[];
 }) {
+  const { setContentFlush } = useAppChrome();
+
   const [title, setTitle] = useState("");
   const [courseCode, setCourseCode] = useState("");
   const [credit, setCredit] = useState("3.0");
@@ -95,16 +98,21 @@ export function CreateCourseForm({
 
   useEffect(() => {
     if (panelOpen) {
+      setContentFlush(true);
       setPanelMounted(true);
       const id = requestAnimationFrame(() => {
         requestAnimationFrame(() => setPanelEntered(true));
       });
       return () => cancelAnimationFrame(id);
     }
+
     setPanelEntered(false);
-    const t = setTimeout(() => setPanelMounted(false), PANEL_MS);
+    const t = setTimeout(() => {
+      setPanelMounted(false);
+      setContentFlush(false);
+    }, PANEL_MS);
     return () => clearTimeout(t);
-  }, [panelOpen]);
+  }, [panelOpen, setContentFlush]);
 
   function tryParseDraft(d: ClassDraft): ClassInput | null {
     const parsed = classInputSchema.safeParse({
@@ -129,7 +137,6 @@ export function CreateCourseForm({
 
   function openPanel() {
     if (panelOpen) {
-      // already open → commit current and start a new one
       commitDraftIfValid();
       startFreshDraft();
       return;
@@ -144,7 +151,6 @@ export function CreateCourseForm({
     setPanelOpen(false);
   }
 
-  // Live preview row when composing a new class
   const showDraftPreview = panelOpen && draft;
 
   if (semesters.length === 0) {
@@ -390,7 +396,8 @@ export function CreateCourseForm({
                   })}
                 </ul>
               )}
-              {/* Live draft preview (same pattern as plans) */}
+
+              {/* Live draft preview */}
               {showDraftPreview && (
                 <div className="flex items-center gap-2 rounded px-2 py-1.5 bg-muted/40">
                   <p className="min-w-0 flex-1 truncate text-sm font-medium text-foreground">
@@ -439,7 +446,7 @@ export function CreateCourseForm({
         </div>
       </div>
 
-      {/* Desktop right panel — full height, solid, same as plans */}
+      {/* Desktop right panel */}
       <div
         className={cn(
           "hidden shrink-0 overflow-hidden transition-[width] duration-300 ease-out md:block",

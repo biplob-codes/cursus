@@ -11,10 +11,13 @@ function AppShellInner({ children }: { children: ReactNode }) {
   const {
     sidebarHidden,
     taskPanelOpen,
+    contentFlush,
     mobileOpen,
     toggleMobile,
     closeMobile,
   } = useAppChrome();
+
+  const flush = taskPanelOpen || contentFlush;
 
   return (
     <div className="flex h-svh overflow-hidden bg-background">
@@ -81,7 +84,7 @@ function AppShellInner({ children }: { children: ReactNode }) {
         <main
           className={cn(
             "app-scroll flex-1 overflow-y-auto bg-background transition-[padding] duration-300 ease-out",
-            taskPanelOpen
+            flush
               ? "px-0 py-0"
               : "px-4 py-6 sm:px-6 md:px-10 md:py-10 lg:px-16 lg:py-12",
           )}
