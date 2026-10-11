@@ -1,9 +1,19 @@
 "use client";
 
-import { useActionState, useEffect, useState } from "react";
-import Link from "next/link";
-import { createCourse } from "@/actions/course";
 import { initialActionState } from "@/actions/action-state";
+import { createCourse } from "@/actions/course";
+import { useAppChrome } from "@/components/app-chrome-context";
+import {
+  ClassComposerPanel,
+  emptyClassDraft,
+  type ClassDraft,
+} from "@/components/class-composer-panel";
+import {
+  fieldInput,
+  formatClassPreview,
+  labelClass,
+} from "@/components/course-form-shared";
+import { cn } from "@/lib/utils";
 import {
   ClassInput,
   classInputSchema,
@@ -17,11 +27,9 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/ui/select";
-import { cn } from "@/lib/utils";
 import { Plus, X } from "lucide-react";
-import { useAppChrome } from "@/components/app-chrome-context";
-import { ClassComposerPanel, type ClassDraft } from "./class-composer-panel";
-
+import Link from "next/link";
+import { useActionState, useEffect, useState } from "react";
 type SemesterOption = {
   id: string;
   label: string;
@@ -29,43 +37,8 @@ type SemesterOption = {
 
 const PANEL_MS = 300;
 
-const emptyClassDraft: ClassDraft = {
-  day: "MONDAY",
-  roomNo: "",
-  startsAt: "",
-  endsAt: "",
-};
-
-const fieldInput = cn(
-  "w-full bg-transparent text-base text-foreground outline-none",
-  "placeholder:text-muted-foreground/45",
-  "[&:-webkit-autofill]:shadow-[inset_0_0_0px_1000px_var(--background)]",
-  "[&:-webkit-autofill]:[-webkit-text-fill-color:var(--foreground)]",
-  "[appearance:textfield]",
-  "[&::-webkit-outer-spin-button]:appearance-none",
-  "[&::-webkit-inner-spin-button]:appearance-none",
-);
-
-const labelClass = "w-[120px] shrink-0 text-sm text-muted-foreground";
-
-function formatClassPreview(draft: ClassDraft): string {
-  const day = DAY_OF_WEEK_LABELS[draft.day] ?? draft.day;
-
-  let time = "";
-  if (draft.startsAt) {
-    const [hStr, mStr] = draft.startsAt.split(":");
-    const hour24 = parseInt(hStr, 10);
-    const minute = parseInt(mStr, 10) || 0;
-    const period = hour24 >= 12 ? "PM" : "AM";
-    const hour12 = hour24 % 12 || 12;
-    time = `${hour12}:${String(minute).padStart(2, "0")} ${period}`;
-  }
-
-  const parts = [day];
-  if (time) parts.push(time);
-  if (draft.roomNo.trim()) parts.push(draft.roomNo.trim());
-  return parts.join(" · ");
-}
+ 
+ 
 
 export function CreateCourseForm({
   semesters,

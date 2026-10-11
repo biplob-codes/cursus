@@ -19,6 +19,13 @@ export type ClassDraft = {
   endsAt: string;
 };
 
+export const emptyClassDraft: ClassDraft = {
+  day: "MONDAY",
+  roomNo: "",
+  startsAt: "",
+  endsAt: "",
+};
+
 type ClassComposerPanelProps = {
   draft: ClassDraft;
   errors: Partial<Record<"day" | "startsAt" | "endsAt" | "roomNo", string>>;
