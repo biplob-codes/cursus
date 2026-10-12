@@ -63,8 +63,12 @@ export function TimePicker({
     nextHour12: number,
     nextMinute: number,
     nextPeriod: "AM" | "PM",
+    shouldClose = false,
   ) {
     onChange(to24Hour(nextHour12, nextMinute, nextPeriod));
+    if (shouldClose) {
+      setOpen(false);
+    }
   }
 
   return (
@@ -85,7 +89,7 @@ export function TimePicker({
 
       <PopoverContent align="start" sideOffset={6} className="w-auto p-2">
         <div className="flex gap-1">
-          {/* Hours */}
+          {/* Hours – keep open */}
           <div className="grid grid-cols-3 gap-0.5">
             {HOURS.map((h) => (
               <button
@@ -106,7 +110,7 @@ export function TimePicker({
 
           <div className="w-px self-stretch bg-border" />
 
-          {/* Minutes */}
+          {/* Minutes – keep open */}
           <div className="grid grid-cols-3 gap-0.5">
             {MINUTES.map((m) => (
               <button
@@ -127,13 +131,13 @@ export function TimePicker({
 
           <div className="w-px self-stretch bg-border" />
 
-          {/* AM / PM */}
+          {/* AM / PM – close after selection */}
           <div className="flex flex-col gap-0.5">
             {(["AM", "PM"] as const).map((p) => (
               <button
                 key={p}
                 type="button"
-                onClick={() => update(hour12, minute, p)}
+                onClick={() => update(hour12, minute, p, true)}
                 className={cn(
                   "flex h-8 w-10 items-center justify-center rounded-md text-sm transition-colors",
                   p === period
